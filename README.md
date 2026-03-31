@@ -24,7 +24,7 @@ O **Stock & Finance Management System** é uma aplicação web full-stack para g
 
 ## 🔗 Links
 
-- **Repositório:** `[a preencher]`
+- **Repositório:** [stock_finance_management_system](https://github.com/luigiferrim/stock_finance_management_system)
 - **Aplicação em produção (24/7):** `[a preencher]`
 
 ---
