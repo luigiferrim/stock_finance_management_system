@@ -48,6 +48,17 @@ O **Stock & Finance Management System** é uma aplicação web full-stack para g
 
 ---
 
+## 🔐 Status da Autenticação
+
+- Login e cadastro base já implementados
+- Proteção de rota privada já ativa
+- Hash de senha migrado para PBKDF2 com fallback legado
+- Rate limit básico aplicado em login e cadastro
+
+**Próximo passo imediato:** implementar verificação por e-mail com código aleatório antes da ativação completa da conta.
+
+---
+
 ## 📂 Estrutura do Projeto
 
 `[a preencher]`

@@ -253,3 +253,12 @@ Se for seguir este plano, a primeira execucao pratica deve ser a Fase 1, criando
 - `npm` ou `pnpm`
 - `next.config.mjs` ou `next.config.ts`
 - se a migracao de senha fica para o fim ou entra como correcao mais cedo
+
+## Auth Roadmap Imediato
+
+Depois da base atual de autenticacao, o proximo passo recomendado e:
+
+- gerar codigo aleatorio de verificacao por e-mail
+- salvar hash do codigo e expiracao no banco
+- enviar o codigo por e-mail
+- exigir verificacao antes da ativacao completa da conta
