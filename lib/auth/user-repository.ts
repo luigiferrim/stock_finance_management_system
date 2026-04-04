@@ -53,3 +53,13 @@ export async function createAuthLog({ userId, action, details }: CreateAuthLogPa
     VALUES (${userId}, ${action}, ${details ?? null}, NOW())
   `.catch(() => null)
 }
+
+export async function updateUserPasswordHash(userId: number, passwordHash: string) {
+  const sql = getDb()
+
+  await sql`
+    UPDATE users
+    SET password = ${passwordHash}, updated_at = NOW()
+    WHERE id = ${userId}
+  `
+}

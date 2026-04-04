@@ -1,8 +1,8 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-import { verifyPassword } from "@/lib/auth/password"
-import { createAuthLog, findUserByEmail } from "@/lib/auth/user-repository"
+import { hashPassword, verifyPassword } from "@/lib/auth/password"
+import { createAuthLog, findUserByEmail, updateUserPasswordHash } from "@/lib/auth/user-repository"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -25,10 +25,21 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          const isPasswordValid = await verifyPassword(credentials.password, user.password)
+          const passwordVerification = await verifyPassword(credentials.password, user.password)
 
-          if (!isPasswordValid) {
+          if (!passwordVerification.valid) {
             return null
+          }
+
+          if (passwordVerification.needsRehash) {
+            const upgradedHash = await hashPassword(credentials.password)
+
+            await updateUserPasswordHash(Number(user.id), upgradedHash)
+            await createAuthLog({
+              userId: Number(user.id),
+              action: "upgrade_password_hash",
+              details: "Hash legado de senha migrado para PBKDF2",
+            })
           }
 
           await createAuthLog({
