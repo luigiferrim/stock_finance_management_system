@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { createAuthLog, findUserByEmail, updateUserPasswordHash } from "@/lib/auth/user-repository"
+import { normalizeEmail, validateEmail } from "@/lib/auth/validation"
 import { getClientIp } from "@/lib/security/request"
 import { createRateLimiter } from "@/lib/security/rate-limit"
 
@@ -25,7 +26,17 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const email = credentials.email.trim().toLowerCase()
+          const email = normalizeEmail(credentials.email)
+          const password = credentials.password
+
+          if (!validateEmail(email)) {
+            return null
+          }
+
+          if (password.length > 128) {
+            return null
+          }
+
           const ip = getClientIp(req.headers)
           const rateLimitResult = loginRateLimiter.check(`login:${ip}:${email}`)
 
@@ -39,14 +50,14 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          const passwordVerification = await verifyPassword(credentials.password, user.password)
+          const passwordVerification = await verifyPassword(password, user.password)
 
           if (!passwordVerification.valid) {
             return null
           }
 
           if (passwordVerification.needsRehash) {
-            const upgradedHash = await hashPassword(credentials.password)
+            const upgradedHash = await hashPassword(password)
 
             await updateUserPasswordHash(Number(user.id), upgradedHash)
             await createAuthLog({

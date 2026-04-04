@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 
 import { createAuthLog, createUser, findUserByEmail } from "@/lib/auth/user-repository"
 import { hashPassword } from "@/lib/auth/password"
+import { normalizeEmail, validateEmail, validateName, validatePasswordPolicy } from "@/lib/auth/validation"
 import { getClientIp } from "@/lib/security/request"
 import { createRateLimiter } from "@/lib/security/rate-limit"
 
@@ -24,15 +25,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const name = String(body.name ?? "").trim()
-    const email = String(body.email ?? "").trim().toLowerCase()
+    const email = normalizeEmail(String(body.email ?? ""))
     const password = String(body.password ?? "")
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Todos os campos sao obrigatorios" }, { status: 400 })
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "A senha deve ter no minimo 6 caracteres" }, { status: 400 })
+    if (!validateName(name)) {
+      return NextResponse.json({ error: "Informe um nome valido" }, { status: 400 })
+    }
+
+    if (!validateEmail(email)) {
+      return NextResponse.json({ error: "Informe um e-mail valido" }, { status: 400 })
+    }
+
+    const passwordValidation = validatePasswordPolicy(password)
+
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.message }, { status: 400 })
     }
 
     const existingUser = await findUserByEmail(email)

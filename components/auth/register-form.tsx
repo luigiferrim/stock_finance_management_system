@@ -25,8 +25,13 @@ export function RegisterForm() {
     event.preventDefault()
     setError("")
 
-    if (password.length < 6) {
-      setError("A senha deve ter no minimo 6 caracteres")
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres")
+      return
+    }
+
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError("A senha deve conter pelo menos uma letra e um numero")
       return
     }
 
@@ -103,6 +108,8 @@ export function RegisterForm() {
               onChange={(event) => setPassword(event.target.value)}
               required
               disabled={loading}
+              minLength={8}
+              maxLength={128}
               className="bg-white pl-10 pr-10"
             />
             <button
