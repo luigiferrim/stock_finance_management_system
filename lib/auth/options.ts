@@ -3,6 +3,13 @@ import CredentialsProvider from "next-auth/providers/credentials"
 
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { createAuthLog, findUserByEmail, updateUserPasswordHash } from "@/lib/auth/user-repository"
+import { getClientIp } from "@/lib/security/request"
+import { createRateLimiter } from "@/lib/security/rate-limit"
+
+const loginRateLimiter = createRateLimiter({
+  maxAttempts: 5,
+  windowMs: 15 * 60 * 1000,
+})
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,13 +19,20 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
 
         try {
           const email = credentials.email.trim().toLowerCase()
+          const ip = getClientIp(req.headers)
+          const rateLimitResult = loginRateLimiter.check(`login:${ip}:${email}`)
+
+          if (!rateLimitResult.allowed) {
+            throw new Error("TooManyAttempts")
+          }
+
           const user = await findUserByEmail(email)
 
           if (!user) {

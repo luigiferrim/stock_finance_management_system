@@ -34,7 +34,11 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
       })
 
       if (result?.error) {
-        setError("Email ou senha invalidos")
+        setError(
+          result.error === "TooManyAttempts"
+            ? "Muitas tentativas. Aguarde antes de tentar novamente."
+            : "Email ou senha invalidos",
+        )
         setLoading(false)
         return
       }

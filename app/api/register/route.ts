@@ -2,9 +2,26 @@ import { type NextRequest, NextResponse } from "next/server"
 
 import { createAuthLog, createUser, findUserByEmail } from "@/lib/auth/user-repository"
 import { hashPassword } from "@/lib/auth/password"
+import { getClientIp } from "@/lib/security/request"
+import { createRateLimiter } from "@/lib/security/rate-limit"
+
+const registerRateLimiter = createRateLimiter({
+  maxAttempts: 5,
+  windowMs: 60 * 60 * 1000,
+})
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request.headers)
+    const rateLimitResult = registerRateLimiter.check(`register:${ip}`)
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Muitas tentativas de cadastro. Aguarde um pouco antes de tentar novamente." },
+        { status: 429 },
+      )
+    }
+
     const body = await request.json()
     const name = String(body.name ?? "").trim()
     const email = String(body.email ?? "").trim().toLowerCase()
