@@ -79,6 +79,10 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
           }
         } catch (error) {
+          if (error instanceof Error && error.message === "TooManyAttempts") {
+            throw error
+          }
+
           console.error("Erro na autenticacao:", error)
           return null
         }
