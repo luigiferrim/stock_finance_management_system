@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu className="w-6 h-6" />
             </Button>
-            <h2 className="font-semibold text-lg text-foreground">Coxilha Coffee</h2>
+            <h2 className="font-semibold text-lg text-foreground">Caferri</h2>
           </div>
 
           {children}

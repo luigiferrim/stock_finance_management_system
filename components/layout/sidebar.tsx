@@ -46,7 +46,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               <Coffee className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-base">Coxilha Coffee</h1>
+              <h1 className="font-bold text-base">Caferri</h1>
               <p className="text-xs text-white/60">Painel de Gestão</p>
             </div>
           </div>
