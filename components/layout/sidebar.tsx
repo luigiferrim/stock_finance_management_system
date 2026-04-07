@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Coffee, LayoutDashboard, Package, TrendingUp, History, Settings, LogOut, X } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 interface SidebarProps {
   isOpen?: boolean
@@ -93,7 +94,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             Configurações
           </Link>
           <button
-            onClick={() => console.log("Aguardando módulo de Auth para integrar o SignOut")}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white transition-colors"
           >
             <LogOut className="w-5 h-5" />
