@@ -1,14 +1,16 @@
 import { neon } from "@neondatabase/serverless"
 
-let _sql: ReturnType<typeof neon> | null = null
+type DbClient = (strings: TemplateStringsArray, ...values: any[]) => Promise<any[]>
 
-export function getDb() {
+let _sql: DbClient | null = null
+
+export function getDb(): DbClient {
   if (!_sql) {
     const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
     if (!connectionString) {
       throw new Error("DATABASE_URL or NEON_DATABASE_URL environment variable is required")
     }
-    _sql = neon(connectionString)
+    _sql = neon(connectionString) as DbClient
   }
   return _sql
 }
