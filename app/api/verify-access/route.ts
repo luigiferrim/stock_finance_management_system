@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { getDb } from "@/lib/db"
 import { validateEnvOrThrow } from "@/lib/env-check"

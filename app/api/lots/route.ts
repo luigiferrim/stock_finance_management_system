@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
 
 // GET /api/lots - Listar todos os lotes

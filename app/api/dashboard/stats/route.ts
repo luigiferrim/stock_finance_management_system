@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
 
 const ACTIVE_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado"]

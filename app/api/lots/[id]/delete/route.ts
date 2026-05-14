@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { sql } from "@/lib/db"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

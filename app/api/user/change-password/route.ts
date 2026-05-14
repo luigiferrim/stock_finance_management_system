@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
-import { hashPassword, verifyPassword } from "@/lib/password"
+import { hashPassword, verifyPassword } from "@/lib/auth/password"
 
 export async function POST(request: Request) {
   try {
@@ -32,9 +32,9 @@ export async function POST(request: Request) {
     const user = users[0]
 
     // Verificar senha atual
-    const isValidPassword = await verifyPassword(currentPassword, user.password)
+    const passwordVerification = await verifyPassword(currentPassword, user.password)
 
-    if (!isValidPassword) {
+    if (!passwordVerification.valid) {
       return NextResponse.json({ error: "Senha atual incorreta" }, { status: 400 })
     }
 
