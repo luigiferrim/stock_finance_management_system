@@ -1,79 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-import { createAuthLog, createUser, findUserByEmail } from "@/lib/auth/user-repository"
+import { getDb } from "@/lib/db"
 import { hashPassword } from "@/lib/auth/password"
-import { normalizeEmail, validateEmail, validateName, validatePasswordPolicy } from "@/lib/auth/validation"
-import { getClientIp } from "@/lib/security/request"
-import { createRateLimiter } from "@/lib/security/rate-limit"
-
-const registerRateLimiter = createRateLimiter({
-  maxAttempts: 5,
-  windowMs: 60 * 60 * 1000,
-})
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = getClientIp(request.headers)
-    const rateLimitResult = registerRateLimiter.check(`register:${ip}`)
-
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: "Muitas tentativas de cadastro. Aguarde um pouco antes de tentar novamente." },
-        { status: 429 },
-      )
-    }
-
     const body = await request.json()
-    const name = String(body.name ?? "").trim()
-    const email = normalizeEmail(String(body.email ?? ""))
-    const password = String(body.password ?? "")
+    const { email, password, name } = body
 
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "Todos os campos sao obrigatorios" }, { status: 400 })
+    if (!email || !password || !name) {
+      return NextResponse.json({ error: "Todos os campos são obrigatórios" }, { status: 400 })
     }
 
-    if (!validateName(name)) {
-      return NextResponse.json({ error: "Informe um nome valido" }, { status: 400 })
+    const sql = getDb()
+
+    const existingUser = await sql`
+      SELECT * FROM users WHERE email = ${email} LIMIT 1
+    `
+
+    if (existingUser.length > 0) {
+      return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 })
     }
 
-    if (!validateEmail(email)) {
-      return NextResponse.json({ error: "Informe um e-mail valido" }, { status: 400 })
-    }
+    const hashedPassword = await hashPassword(password)
 
-    const passwordValidation = validatePasswordPolicy(password)
+    const users = await sql`
+      INSERT INTO users (email, password, name)
+      VALUES (${email}, ${hashedPassword}, ${name})
+      RETURNING id
+    `
 
-    if (!passwordValidation.valid) {
-      return NextResponse.json({ error: passwordValidation.message }, { status: 400 })
-    }
+    const userId = users[0].id
 
-    const existingUser = await findUserByEmail(email)
+    await sql`
+      INSERT INTO logs (user_id, action, details, created_at)
+      VALUES (${userId}, 'register', ${`Novo usuário ${email} registrado`}, NOW())
+    `
 
-    if (existingUser) {
-      return NextResponse.json({ error: "Email ja cadastrado" }, { status: 400 })
-    }
-
-    const passwordHash = await hashPassword(password)
-    const user = await createUser({
-      email,
-      name,
-      passwordHash,
-    })
-
-    await createAuthLog({
-      userId: Number(user.id),
-      action: "register",
-      details: `Novo usuario ${email} registrado`,
-    })
-
-    return NextResponse.json(
-      {
-        message: "Usuario criado com sucesso",
-        userId: user.id,
-      },
-      { status: 201 },
-    )
+    return NextResponse.json({ message: "Usuário criado com sucesso", userId }, { status: 201 })
   } catch (error) {
-    console.error("Erro ao registrar usuario:", error)
-    return NextResponse.json({ error: "Erro ao registrar usuario" }, { status: 500 })
+    console.error("Erro ao registrar usuário:", error)
+    return NextResponse.json({ error: "Erro ao registrar usuário" }, { status: 500 })
   }
 }
