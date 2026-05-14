@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+
+const ACTIVE_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado"]
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,14 +16,14 @@ export async function GET(request: NextRequest) {
     const sql = getDb()
 
     const totalLotsResult = await sql`
-      SELECT COUNT(*) as count FROM lots WHERE status = 'active'
+      SELECT COUNT(*) as count FROM lots WHERE status = ANY(${ACTIVE_STATUSES})
     `
     const totalLots = Number.parseInt(totalLotsResult[0]?.count || "0")
 
     const lotsData = await sql`
       SELECT quantity, cost_price, sale_price
       FROM lots
-      WHERE status = 'active'
+      WHERE status = ANY(${ACTIVE_STATUSES})
     `
 
     const totalCost = lotsData.reduce((sum, lot) => {
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
     const expiringLotsResult = await sql`
       SELECT COUNT(*) as count
       FROM lots
-      WHERE status = 'active'
+      WHERE status = ANY(${ACTIVE_STATUSES})
         AND roast_date IS NOT NULL
         AND roast_date <= ${sixtyDaysAgo}
     `
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       expiringLots,
     })
   } catch (error) {
-    console.error("[v0] Erro ao buscar estatísticas:", error)
+    console.error("Erro ao buscar estatísticas:", error)
 
     return NextResponse.json(
       {

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
 
 // GET /api/lots - Listar todos os lotes
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(formattedLots)
   } catch (error) {
-    console.error("[v0] Erro ao buscar lotes:", error)
+    console.error("Erro ao buscar lotes:", error)
     return NextResponse.json({ error: "Erro ao buscar lotes. Tente novamente." }, { status: 500 })
   }
 }
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log("[v0] Dados recebidos:", body)
 
     const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } = body
 
@@ -93,8 +92,6 @@ export async function POST(request: NextRequest) {
 
     const sql = getDb()
 
-    console.log("[v0] Inserindo lote no banco...")
-
     const lots = await sql`
       INSERT INTO lots (
         name, 
@@ -124,7 +121,6 @@ export async function POST(request: NextRequest) {
     `
 
     const lot = lots[0]
-    console.log("[v0] Lote criado:", lot)
 
     await sql`
       INSERT INTO logs (user_id, lot_id, action, details, created_at)
@@ -136,19 +132,16 @@ export async function POST(request: NextRequest) {
         NOW()
       )
     `
-
-    console.log("[v0] Log criado com sucesso")
-
     return NextResponse.json(lot, { status: 201 })
   } catch (error) {
-    console.error("[v0] Erro detalhado ao criar lote:", error)
+    console.error("Erro ao criar lote:", error)
 
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
 
     return NextResponse.json(
       {
         error: "Erro ao criar lote. Verifique os dados e tente novamente.",
-        details: errorMessage,
+        details: process.env.NODE_ENV === "production" ? undefined : errorMessage,
         hint: "Verifique se todas as colunas necessárias existem no banco de dados",
       },
       { status: 500 },
