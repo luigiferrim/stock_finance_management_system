@@ -151,7 +151,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
       setOpen(false)
       onSuccess()
     } catch (error) {
-      console.error(`[v0] Erro ao ${editLot ? "atualizar" : "criar"} lote:`, error)
+      console.error(`Erro ao ${editLot ? "atualizar" : "criar"} lote:`, error)
       setError(
         error instanceof Error ? error.message : `Erro ao ${editLot ? "atualizar" : "criar"} lote. Tente novamente.`,
       )

@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { hashPassword } from "@/lib/auth/password"
 import { createAuthLog, createUser, findUserByEmail } from "@/lib/auth/user-repository"
 import { normalizeEmail, validateEmail, validateName, validatePasswordPolicy } from "@/lib/auth/validation"
+import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { getClientIp } from "@/lib/security/request"
 import { createRateLimiter } from "@/lib/security/rate-limit"
 
@@ -13,14 +14,17 @@ const registerRateLimiter = createRateLimiter({
 
 export async function POST(request: NextRequest) {
   try {
-    let body: Partial<Record<"email" | "password" | "name", unknown>>
-
-    try {
-      body = (await request.json()) as Partial<Record<"email" | "password" | "name", unknown>>
-    } catch {
-      return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
     }
 
+    const parsedBody = await parseJsonBody<Partial<Record<"email" | "password" | "name", unknown>>>(request)
+    if (!parsedBody.ok) {
+      return parsedBody.response
+    }
+
+    const body = parsedBody.data
     const { email, password, name } = body
 
     if (typeof email !== "string" || typeof password !== "string" || typeof name !== "string") {

@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth/options"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { getDb } from "@/lib/db"
 import { validateEnvOrThrow } from "@/lib/env-check"
+import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { getClientIp } from "@/lib/security/request"
+import { validatePositiveInteger } from "@/lib/security/validation"
 
 const rateLimiter = applyRateLimit({
   interval: 60 * 60 * 1000,
@@ -18,7 +21,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown"
+    const originError = requireSameOrigin(req)
+    if (originError) {
+      return originError
+    }
+
+    const userId = validatePositiveInteger(session.user.id, "Usuário")
+    if (!userId.valid) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+    }
+
+    const ip = getClientIp(req.headers)
 
     try {
       await rateLimiter.check(3, ip)
@@ -27,7 +40,7 @@ export async function POST(req: NextRequest) {
       await sql`
         INSERT INTO logs (user_id, action, details, created_at)
         VALUES (
-          ${Number.parseInt(session.user.id)},
+          ${userId.value},
           'security_alert',
           ${"Múltiplas tentativas de código de acesso falhadas do IP: " + ip},
           NOW()
@@ -40,9 +53,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { accessCode } = await req.json()
+    const body = await parseJsonBody(req)
+    if (!body.ok) {
+      return body.response
+    }
 
-    if (!accessCode || typeof accessCode !== "string") {
+    const { accessCode } = body.data
+
+    if (typeof accessCode !== "string" || accessCode.trim().length === 0 || accessCode.length > 128) {
       return NextResponse.json({ error: "Código de acesso é obrigatório" }, { status: 400 })
     }
 
@@ -61,7 +79,7 @@ export async function POST(req: NextRequest) {
       await sql`
         INSERT INTO logs (user_id, action, details, created_at)
         VALUES (
-          ${Number.parseInt(session.user.id)},
+          ${userId.value},
           'access_denied',
           ${"Tentativa de acesso com código incorreto do IP: " + ip},
           NOW()
@@ -74,7 +92,7 @@ export async function POST(req: NextRequest) {
     await sql`
       INSERT INTO logs (user_id, action, details, created_at)
       VALUES (
-        ${Number.parseInt(session.user.id)},
+        ${userId.value},
         'access_granted',
         'Acesso ao sistema concedido com código mestre',
         NOW()

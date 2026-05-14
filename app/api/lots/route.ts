@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { validatePositiveInteger } from "@/lib/security/validation"
+import { validateCreateLotPayload } from "@/lib/stock/validation"
 
 // GET /api/lots - Listar todos os lotes
 export async function GET(request: NextRequest) {
@@ -50,46 +53,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const body = await request.json()
-
-    const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } = body
-
-    if (!name || !quantity || !costPrice || !salePrice || !category) {
-      return NextResponse.json(
-        {
-          error: "Campos obrigatórios faltando",
-          details: {
-            name: !name ? "Nome é obrigatório" : null,
-            quantity: !quantity ? "Quantidade é obrigatória" : null,
-            costPrice: !costPrice ? "Preço de compra é obrigatório" : null,
-            salePrice: !salePrice ? "Preço de venda é obrigatório" : null,
-            category: !category ? "Categoria é obrigatória" : null,
-          },
-        },
-        { status: 400 },
-      )
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
     }
 
-    const quantityNum = Number.parseFloat(quantity)
-    const costPriceNum = Number.parseFloat(costPrice)
-    const salePriceNum = Number.parseFloat(salePrice)
-
-    if (Number.isNaN(quantityNum) || quantityNum <= 0) {
-      return NextResponse.json({ error: "A quantidade deve ser um número maior que zero" }, { status: 400 })
+    const userId = validatePositiveInteger(session.user.id, "Usuário")
+    if (!userId.valid) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    if (Number.isNaN(costPriceNum) || costPriceNum < 0) {
-      return NextResponse.json({ error: "O preço de compra deve ser um número válido não negativo" }, { status: 400 })
+    const body = await parseJsonBody(request)
+    if (!body.ok) {
+      return body.response
     }
 
-    if (Number.isNaN(salePriceNum) || salePriceNum < 0) {
-      return NextResponse.json({ error: "O preço de venda deve ser um número válido não negativo" }, { status: 400 })
+    const lotPayload = validateCreateLotPayload(body.data)
+    if (!lotPayload.valid) {
+      return NextResponse.json({ error: lotPayload.error }, { status: 400 })
     }
 
-    if (category !== "Blend" && category !== "Single Origin") {
-      return NextResponse.json({ error: "Categoria inválida. Use 'Blend' ou 'Single Origin'" }, { status: 400 })
-    }
-
+    const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } =
+      lotPayload.value
     const sql = getDb()
 
     const lots = await sql`
@@ -107,15 +92,15 @@ export async function POST(request: NextRequest) {
       )
       VALUES (
         ${name},
-        ${quantityNum},
-        ${costPriceNum},
-        ${salePriceNum},
-        ${supplier || null},
+        ${quantity},
+        ${costPrice},
+        ${salePrice},
+        ${supplier},
         ${category},
-        ${variety || null},
-        ${process || null},
-        ${roastDate ? new Date(roastDate) : null},
-        ${status || "Em Estoque"}
+        ${variety},
+        ${process},
+        ${roastDate},
+        ${status}
       )
       RETURNING *
     `
@@ -125,10 +110,10 @@ export async function POST(request: NextRequest) {
     await sql`
       INSERT INTO logs (user_id, lot_id, action, details, created_at)
       VALUES (
-        ${Number.parseInt(session.user.id)},
+        ${userId.value},
         ${lot.id},
         'create_lot',
-        ${`Lote "${name}" (${category}) criado com ${quantityNum}kg a R$${salePriceNum}/kg - Status: ${status || "Em Estoque"}`},
+        ${`Lote "${name}" (${category}) criado com ${quantity}kg a R$${salePrice}/kg - Status: ${status}`},
         NOW()
       )
     `
@@ -136,13 +121,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Erro ao criar lote:", error)
 
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido"
-
     return NextResponse.json(
       {
         error: "Erro ao criar lote. Verifique os dados e tente novamente.",
-        details: process.env.NODE_ENV === "production" ? undefined : errorMessage,
-        hint: "Verifique se todas as colunas necessárias existem no banco de dados",
       },
       { status: 500 },
     )

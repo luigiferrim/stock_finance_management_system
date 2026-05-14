@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { sql } from "@/lib/db"
+import { requireSameOrigin } from "@/lib/security/api"
+import { validatePositiveInteger } from "@/lib/security/validation"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,8 +14,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
+    }
+
+    const lotId = validatePositiveInteger(id, "Lote")
+    if (!lotId.valid) {
+      return NextResponse.json({ error: lotId.error }, { status: 400 })
+    }
+
+    const userId = validatePositiveInteger(session.user.id, "Usuário")
+    if (!userId.valid) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+    }
+
     const lots = await sql`
-      SELECT * FROM lots WHERE id = ${Number.parseInt(id)} LIMIT 1
+      SELECT * FROM lots WHERE id = ${lotId.value} LIMIT 1
     `
 
     if (lots.length === 0) {
@@ -25,7 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await sql`
       INSERT INTO logs (user_id, lot_id, action, details, created_at)
       VALUES (
-        ${Number.parseInt(session.user.id)},
+        ${userId.value},
         ${lot.id},
         'delete_lot',
         ${`Lote "${lot.name}" foi deletado`},
@@ -34,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     `
 
     await sql`
-      DELETE FROM lots WHERE id = ${Number.parseInt(id)}
+      DELETE FROM lots WHERE id = ${lotId.value}
     `
 
     return NextResponse.json({ message: "Lote deletado com sucesso" })
