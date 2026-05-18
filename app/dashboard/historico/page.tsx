@@ -1,47 +1,63 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertTriangle, Clock, FileText, Package, User } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { AlertTriangle } from "lucide-react"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-type AuditLog = {
-  id: string | number
+interface Log {
+  id: string
   action: string
-  details: string
+  details: string | null
   createdAt: string
-  user: {
-    name: string
-    email: string
-  }
-  lot: {
-    name: string
-  } | null
+  user: { name: string; email: string }
+  lot: { name: string } | null
 }
 
-const actionLabels: Record<string, string> = {
-  register: "Cadastro",
-  create_lot: "Lote criado",
-  update_lot: "Lote atualizado",
-  change_status: "Status alterado",
-  delete_lot: "Lote removido",
+const ACTION_OPTIONS = [
+  "login",
+  "logout",
+  "register",
+  "create_lot",
+  "update_lot",
+  "change_status",
+  "delete_lot",
+  "change_password",
+  "access_granted",
+  "access_denied",
+  "security_alert",
+  "upgrade_password_hash",
+] as const
+
+const ACTION_META: Record<string, { label: string; badgeClassName: string }> = {
+  login: { label: "Login", badgeClassName: "bg-blue-500/10 text-blue-600" },
+  logout: { label: "Logout", badgeClassName: "bg-gray-500/10 text-gray-600" },
+  register: { label: "Registro", badgeClassName: "bg-green-500/10 text-green-600" },
+  create_lot: { label: "Criar Lote", badgeClassName: "bg-green-500/10 text-green-600" },
+  update_lot: { label: "Atualizar Lote", badgeClassName: "bg-yellow-500/10 text-yellow-600" },
+  change_status: { label: "Alterar Status", badgeClassName: "bg-amber-500/10 text-amber-600" },
+  delete_lot: { label: "Deletar Lote", badgeClassName: "bg-red-500/10 text-red-600" },
+  change_password: { label: "Trocar Senha", badgeClassName: "bg-purple-500/10 text-purple-600" },
+  access_granted: { label: "Acesso Concedido", badgeClassName: "bg-emerald-500/10 text-emerald-600" },
+  access_denied: { label: "Acesso Negado", badgeClassName: "bg-orange-500/10 text-orange-600" },
+  security_alert: { label: "Alerta de Segurança", badgeClassName: "bg-red-500/10 text-red-600" },
+  upgrade_password_hash: { label: "Atualização de Hash", badgeClassName: "bg-gray-500/10 text-gray-600" },
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value))
-}
-
-function getActionLabel(action: string) {
-  return actionLabels[action] ?? action.replaceAll("_", " ")
+function getActionMeta(action: string) {
+  return ACTION_META[action] ?? { label: action, badgeClassName: "bg-gray-500/10 text-gray-600" }
 }
 
 export default function HistoricoPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([])
+  const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedAction, setSelectedAction] = useState("all")
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -49,13 +65,13 @@ export default function HistoricoPage() {
         const response = await fetch("/api/logs")
 
         if (!response.ok) {
-          throw new Error("Nao foi possivel carregar o historico.")
+          throw new Error("Não foi possível carregar o histórico.")
         }
 
-        const data = await response.json()
-        setLogs(Array.isArray(data) ? data : [])
+        const data: Log[] = await response.json()
+        setLogs(data)
       } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : "Erro ao carregar historico.")
+        setError(fetchError instanceof Error ? fetchError.message : "Erro ao carregar histórico.")
       } finally {
         setLoading(false)
       }
@@ -64,89 +80,166 @@ export default function HistoricoPage() {
     fetchLogs()
   }, [])
 
-  return (
-    <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Histórico e Alertas</h1>
-        <p className="text-muted-foreground mt-1">Logs do sistema e rastreabilidade.</p>
-      </div>
+  const normalizedSearch = searchTerm.trim().toLowerCase()
+  const filteredLogs = logs.filter((log) => {
+    const matchesAction = selectedAction === "all" || log.action === selectedAction
+    const searchableText = [log.details ?? "", log.user.name, log.user.email, log.lot?.name ?? ""]
+      .join(" ")
+      .toLowerCase()
+    const matchesSearch = normalizedSearch.length === 0 || searchableText.includes(normalizedSearch)
 
-      {loading && (
-        <Card className="border-border bg-white">
-          <CardContent className="flex h-64 items-center justify-center p-6">
-            <div className="text-lg text-muted-foreground">Carregando historico...</div>
+    return matchesAction && matchesSearch
+  })
+
+  const totalEvents = logs.length
+  const createdLots = logs.filter((log) => log.action === "create_lot").length
+  const deletedLots = logs.filter((log) => log.action === "delete_lot").length
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+          <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground">Carregando...</p>
           </CardContent>
         </Card>
-      )}
+      </div>
+    )
+  }
 
-      {!loading && error && (
-        <Card className="border-destructive/30 bg-white">
-          <CardContent className="flex h-64 flex-col items-center justify-center gap-3 p-6 text-center">
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+          <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
+        </div>
+        <Card className="border-destructive/30">
+          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
             <AlertTriangle className="h-8 w-8 text-destructive" />
             <div>
-              <p className="font-semibold text-foreground">Nao foi possivel carregar o historico</p>
+              <p className="font-semibold text-foreground">Não foi possível carregar o histórico</p>
               <p className="text-sm text-muted-foreground">{error}</p>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+    )
+  }
 
-      {!loading && !error && logs.length === 0 && (
-        <Card className="border-border bg-white">
-          <CardContent className="flex h-64 flex-col items-center justify-center gap-3 p-6 text-center">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-            <div>
-              <p className="font-semibold text-foreground">Nenhum registro encontrado</p>
-              <p className="text-sm text-muted-foreground">As atividades do sistema aparecerao aqui.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+  return (
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+        <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
+      </div>
 
-      {!loading && !error && logs.length > 0 && (
-        <div className="space-y-4">
-          {logs.map((log) => (
-            <Card key={log.id} className="border-border bg-white">
-              <CardContent className="p-5">
-                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                  <div className="flex gap-4">
-                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                      <Clock className="h-5 w-5 text-primary" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Refine os registros por texto livre ou tipo de ação</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              placeholder="Buscar por detalhes, usuário, e-mail ou lote"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+            <Select value={selectedAction} onValueChange={setSelectedAction}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todas as ações" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as ações</SelectItem>
+                {ACTION_OPTIONS.map((action) => (
+                  <SelectItem key={action} value={action}>
+                    {getActionMeta(action).label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Eventos Recentes</CardTitle>
+          <CardDescription>Acompanhe a atividade registrada pelas rotas do sistema</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {filteredLogs.length > 0 ? (
+            filteredLogs.map((log) => {
+              const actionMeta = getActionMeta(log.action)
+              const createdAt = new Date(log.createdAt)
+
+              return (
+                <div
+                  key={log.id}
+                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors flex flex-col gap-4 md:flex-row md:items-start md:justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${actionMeta.badgeClassName}`}
+                      >
+                        {actionMeta.label}
+                      </span>
+                      <span className="text-sm text-muted-foreground">por {log.user.name}</span>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-wide text-primary">
-                          {getActionLabel(log.action)}
-                        </p>
-                        <p className="text-base font-medium text-foreground">{log.details}</p>
-                      </div>
 
-                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1.5">
-                          <User className="h-4 w-4" />
-                          {log.user.name}
-                          {log.user.email ? ` (${log.user.email})` : ""}
-                        </span>
+                    {log.details ? <p className="text-sm text-foreground">{log.details}</p> : null}
 
-                        {log.lot && (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Package className="h-4 w-4" />
-                            {log.lot.name}
-                          </span>
-                        )}
-                      </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>{log.user.email}</p>
+                      {log.lot ? <p>Lote relacionado: {log.lot.name}</p> : null}
                     </div>
                   </div>
 
-                  <time className="shrink-0 text-sm text-muted-foreground" dateTime={log.createdAt}>
-                    {formatDate(log.createdAt)}
-                  </time>
+                  <div className="shrink-0 text-sm text-muted-foreground md:text-right">
+                    <p>{formatDistanceToNow(createdAt, { addSuffix: true, locale: ptBR })}</p>
+                    <p>{createdAt.toLocaleString("pt-BR")}</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              )
+            })
+          ) : (
+            <div className="border rounded-lg p-6 text-center text-muted-foreground">
+              {logs.length === 0
+                ? "Nenhum registro de auditoria ainda"
+                : "Nenhum registro encontrado com os filtros aplicados"}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumo da Auditoria</CardTitle>
+          <CardDescription>Métricas rápidas dos eventos registrados</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">Total de eventos</p>
+              <p className="text-2xl font-bold">{totalEvents}</p>
+            </div>
+            <div className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">Lotes criados</p>
+              <p className="text-2xl font-bold">{createdLots}</p>
+            </div>
+            <div className="rounded-lg border p-4">
+              <p className="text-sm text-muted-foreground">Lotes deletados</p>
+              <p className="text-2xl font-bold">{deletedLots}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
