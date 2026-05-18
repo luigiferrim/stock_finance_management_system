@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { validatePositiveInteger } from "@/lib/security/validation"
+import { validateUpdateLotPayload } from "@/lib/stock/validation"
 
 // PUT /api/lots/[id] - Atualizar lote
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,26 +16,51 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } = body
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
+    }
+
+    const lotId = validatePositiveInteger(id, "Lote")
+    if (!lotId.valid) {
+      return NextResponse.json({ error: lotId.error }, { status: 400 })
+    }
+
+    const userId = validatePositiveInteger(session.user.id, "Usuário")
+    if (!userId.valid) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+    }
+
+    const body = await parseJsonBody(request)
+    if (!body.ok) {
+      return body.response
+    }
+
+    const lotPayload = validateUpdateLotPayload(body.data)
+    if (!lotPayload.valid) {
+      return NextResponse.json({ error: lotPayload.error }, { status: 400 })
+    }
+
+    const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } =
+      lotPayload.value
 
     const sql = getDb()
 
     const lots = await sql`
       UPDATE lots
       SET
-        name = COALESCE(${name}, name),
-        quantity = COALESCE(${quantity ? Number.parseFloat(quantity) : null}, quantity),
-        cost_price = COALESCE(${costPrice ? Number.parseFloat(costPrice) : null}, cost_price),
-        sale_price = COALESCE(${salePrice ? Number.parseFloat(salePrice) : null}, sale_price),
-        supplier = COALESCE(${supplier}, supplier),
-        category = COALESCE(${category}, category),
-        variety = COALESCE(${variety}, variety),
-        process = COALESCE(${process}, process),
-        roast_date = COALESCE(${roastDate ? new Date(roastDate) : null}, roast_date),
-        status = COALESCE(${status}, status),
+        name = COALESCE(${name ?? null}, name),
+        quantity = COALESCE(${quantity ?? null}, quantity),
+        cost_price = COALESCE(${costPrice ?? null}, cost_price),
+        sale_price = COALESCE(${salePrice ?? null}, sale_price),
+        supplier = COALESCE(${supplier ?? null}, supplier),
+        category = COALESCE(${category ?? null}, category),
+        variety = COALESCE(${variety ?? null}, variety),
+        process = COALESCE(${process ?? null}, process),
+        roast_date = COALESCE(${roastDate ?? null}, roast_date),
+        status = COALESCE(${status ?? null}, status),
         updated_at = NOW()
-      WHERE id = ${Number.parseInt(id)}
+      WHERE id = ${lotId.value}
       RETURNING *
     `
 
@@ -49,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await sql`
       INSERT INTO logs (user_id, lot_id, action, details, created_at)
       VALUES (
-        ${Number.parseInt(session.user.id)},
+        ${userId.value},
         ${lot.id},
         ${status ? "change_status" : "update_lot"},
         ${actionDetails},
@@ -75,11 +103,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(formattedLot)
   } catch (error) {
-    console.error("[v0] Erro ao atualizar lote:", error)
+    console.error("Erro ao atualizar lote:", error)
     return NextResponse.json(
       {
         error: "Erro ao atualizar lote",
-        details: error instanceof Error ? error.message : "Erro desconhecido",
       },
       { status: 500 },
     )

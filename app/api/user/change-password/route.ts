@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
+import { validatePasswordPolicy } from "@/lib/auth/validation"
+import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -12,15 +14,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
-    const { currentPassword, newPassword } = await request.json()
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
+    }
 
-    if (!currentPassword || !newPassword) {
+    const body = await parseJsonBody(request)
+    if (!body.ok) {
+      return body.response
+    }
+
+    const { currentPassword, newPassword } = body.data
+
+    if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
       return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
+    }
+
+    const passwordValidation = validatePasswordPolicy(newPassword)
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.message }, { status: 400 })
     }
 
     const sql = getDb()
 
-    // Buscar usuário
     const users = await sql`
       SELECT id, password FROM users WHERE email = ${session.user.email}
     `
@@ -31,22 +47,18 @@ export async function POST(request: Request) {
 
     const user = users[0]
 
-    // Verificar senha atual
     const passwordVerification = await verifyPassword(currentPassword, user.password)
 
     if (!passwordVerification.valid) {
       return NextResponse.json({ error: "Senha atual incorreta" }, { status: 400 })
     }
 
-    // Hash da nova senha
     const hashedPassword = await hashPassword(newPassword)
 
-    // Atualizar senha no banco
     await sql`
       UPDATE users SET password = ${hashedPassword} WHERE id = ${user.id}
     `
 
-    // Registrar log
     await sql`
       INSERT INTO logs (action, details, user_id)
       VALUES ('change_password', 'Usuário alterou sua senha', ${user.id})

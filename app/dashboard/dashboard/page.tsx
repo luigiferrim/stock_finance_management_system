@@ -27,7 +27,7 @@ export default function DashboardPage() {
       const statsData = await statsRes.json()
       setStats(statsData)
     } catch (error) {
-      console.error("[v0] Erro ao buscar dados:", error)
+      console.error("Erro ao buscar dados:", error)
     } finally {
       setLoading(false)
     }

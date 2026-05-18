@@ -1,15 +1,25 @@
+export type LoteStatus = "Encomendado" | "Chegou" | "Em Estoque" | "Embalado" | "Vendido";
+
 export interface Lote {
     id: string;
-    nome: string;
-    quantidade: number;
-    unidade: string;
-    status: 'ativo' | 'alerta' | 'esgotado';
-    dataEntrada: string;
-    valorTotal: number;
+    name: string;
+    quantity: number;
+    costPrice: number;
+    salePrice: number;
+    supplier: string | null;
+    category: "Blend" | "Single Origin";
+    variety: string | null;
+    process: string | null;
+    roastDate: string | null;
+    entryDate: string;
+    expiryDate: string | null;
+    status: LoteStatus;
 }
 
 export interface EstatisticasEstoque {
-    totalLotes: number;
-    itensEmAlerta: number;
-    valorTotalEstoque: number;
+    totalLots: number;
+    totalCost: number;
+    totalSaleValue: number;
+    profitMargin: number;
+    expiringLots: number;
 }

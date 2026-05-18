@@ -50,7 +50,7 @@ export default function EstoquePage() {
       setLots(data)
       setFilteredLots(data)
     } catch (error) {
-      console.error("[v0] Erro ao buscar lotes:", error)
+      console.error("Erro ao buscar lotes:", error)
     } finally {
       setLoading(false)
     }
@@ -63,7 +63,7 @@ export default function EstoquePage() {
       await fetch(`/api/lots/${id}/delete`, { method: "POST" })
       fetchLots()
     } catch (error) {
-      console.error("[v0] Erro ao deletar lote:", error)
+      console.error("Erro ao deletar lote:", error)
       alert("Erro ao deletar lote")
     }
   }
@@ -102,7 +102,7 @@ export default function EstoquePage() {
 
       fetchLots()
     } catch (error) {
-      console.error("[v0] Erro ao atualizar status:", error)
+      console.error("Erro ao atualizar status:", error)
       alert("Erro ao atualizar status")
     }
   }

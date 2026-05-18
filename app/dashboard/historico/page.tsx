@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { AlertTriangle } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -54,6 +55,7 @@ function getActionMeta(action: string) {
 export default function HistoricoPage() {
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedAction, setSelectedAction] = useState("all")
 
@@ -61,15 +63,15 @@ export default function HistoricoPage() {
     const fetchLogs = async () => {
       try {
         const response = await fetch("/api/logs")
+
         if (!response.ok) {
-          throw new Error("Erro ao buscar logs")
+          throw new Error("Não foi possível carregar o histórico.")
         }
 
         const data: Log[] = await response.json()
         setLogs(data)
-      } catch (error) {
-        console.error("Erro ao buscar logs:", error)
-        setLogs([])
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : "Erro ao carregar histórico.")
       } finally {
         setLoading(false)
       }
@@ -81,12 +83,7 @@ export default function HistoricoPage() {
   const normalizedSearch = searchTerm.trim().toLowerCase()
   const filteredLogs = logs.filter((log) => {
     const matchesAction = selectedAction === "all" || log.action === selectedAction
-    const searchableText = [
-      log.details ?? "",
-      log.user.name,
-      log.user.email,
-      log.lot?.name ?? "",
-    ]
+    const searchableText = [log.details ?? "", log.user.name, log.user.email, log.lot?.name ?? ""]
       .join(" ")
       .toLowerCase()
     const matchesSearch = normalizedSearch.length === 0 || searchableText.includes(normalizedSearch)
@@ -108,6 +105,26 @@ export default function HistoricoPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">Carregando...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+          <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
+        </div>
+        <Card className="border-destructive/30">
+          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div>
+              <p className="font-semibold text-foreground">Não foi possível carregar o histórico</p>
+              <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
