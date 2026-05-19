@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
-import { TrendingUp, TrendingDown, Package, DollarSign } from "lucide-react"
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
+import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
 
 interface Stats {
   totalLots: number
@@ -13,46 +13,104 @@ interface Stats {
   expiringLots: number
 }
 
+interface Lot {
+  id: string
+  name: string
+  quantity: number
+  costPrice: number
+  salePrice: number
+  category: string
+  status: string
+}
+
+const ACTIVE_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado"]
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Blend: "rgb(180, 140, 100)",
+  "Single Origin": "rgb(121, 85, 72)",
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  Encomendado: "rgb(91, 122, 168)",
+  Chegou: "rgb(140, 110, 175)",
+  "Em Estoque": "rgb(95, 145, 95)",
+  Embalado: "rgb(210, 145, 70)",
+  Vendido: "rgb(140, 140, 140)",
+}
+
+const FALLBACK_COLOR = "rgb(170, 150, 130)"
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
+  const [lots, setLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, lotsRes] = await Promise.all([
+          fetch("/api/dashboard/stats"),
+          fetch("/api/lots"),
+        ])
+        const statsData = await statsRes.json()
+        const lotsData = await lotsRes.json()
+        setStats(statsData)
+        setLots(Array.isArray(lotsData) ? lotsData : [])
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchData()
   }, [])
 
-  const fetchData = async () => {
-    try {
-      const statsRes = await fetch("/api/dashboard/stats")
-      const statsData = await statsRes.json()
-      setStats(statsData)
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error)
-    } finally {
-      setLoading(false)
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+
+  const activeLots = useMemo(
+    () => lots.filter((lot) => ACTIVE_STATUSES.includes(lot.status)),
+    [lots],
+  )
+
+  const totalKg = useMemo(
+    () => activeLots.reduce((sum, lot) => sum + Number(lot.quantity || 0), 0),
+    [activeLots],
+  )
+
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const lot of activeLots) {
+      const category = lot.category || "Sem categoria"
+      map.set(category, (map.get(category) || 0) + Number(lot.quantity || 0))
     }
-  }
+    return Array.from(map.entries()).map(([name, value]) => ({
+      name,
+      value,
+      fill: CATEGORY_COLORS[name] || FALLBACK_COLOR,
+    }))
+  }, [activeLots])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value)
-  }
+  const statusData = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const lot of lots) {
+      if (!lot.status) continue
+      map.set(lot.status, (map.get(lot.status) || 0) + 1)
+    }
+    const total = Array.from(map.values()).reduce((sum, value) => sum + value, 0) || 1
+    return Array.from(map.entries()).map(([name, count]) => ({
+      name,
+      value: count,
+      percent: Math.round((count / total) * 100),
+      fill: STATUS_COLORS[name] || FALLBACK_COLOR,
+    }))
+  }, [lots])
 
-  // Dados de exemplo para gráficos
-  const categoryData = [
-    { name: "Especial", value: 1500, fill: "rgb(121, 85, 72)" },
-    { name: "Blend", value: 800, fill: "rgb(230, 224, 217)" },
-    { name: "Microlote", value: 2200, fill: "rgb(139, 109, 87)" },
-  ]
-
-  const statusData = [
-    { name: "Encomendado", value: 35, fill: "rgb(121, 85, 72)" },
-    { name: "Chegou", value: 25, fill: "rgb(180, 165, 155)" },
-    { name: "Embalado", value: 20, fill: "rgb(210, 205, 195)" },
-    { name: "Vendido", value: 20, fill: "rgb(160, 145, 130)" },
-  ]
+  const profitMarginPercent =
+    stats?.totalSaleValue && stats.totalSaleValue > 0
+      ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
+      : "0"
 
   if (loading) {
     return (
@@ -62,31 +120,23 @@ export default function DashboardPage() {
     )
   }
 
-  const profitMarginPercent =
-    stats?.totalSaleValue && stats.totalSaleValue > 0
-      ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
-      : "0"
-
   return (
     <div className="p-8 space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Visão Geral</h1>
         <p className="text-muted-foreground mt-1">Acompanhe as métricas mais importantes do seu negócio.</p>
       </div>
 
-      {/* Cards de métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-border bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Cafés encomendados</p>
+              <p className="text-sm text-muted-foreground">Lotes ativos</p>
               <Package className="w-5 h-5 text-primary" />
             </div>
             <p className="text-3xl font-bold text-foreground">{stats?.totalLots || 0}</p>
-            <p className="text-xs text-success mt-2 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              +10%
+            <p className="text-xs text-muted-foreground mt-2">
+              Encomendado, Chegou, Em Estoque e Embalado
             </p>
           </CardContent>
         </Card>
@@ -94,147 +144,161 @@ export default function DashboardPage() {
         <Card className="border-border bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Cafés em estoque</p>
+              <p className="text-sm text-muted-foreground">Volume total</p>
               <Package className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-3xl font-bold text-foreground">850 kg</p>
-            <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-              <TrendingDown className="w-3 h-3" />
-              -2%
-            </p>
+            <p className="text-3xl font-bold text-foreground">{totalKg.toLocaleString("pt-BR")} kg</p>
+            <p className="text-xs text-muted-foreground mt-2">Somatório de lotes ativos</p>
           </CardContent>
         </Card>
 
         <Card className="border-border bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Cafés embalados</p>
-              <Package className="w-5 h-5 text-primary" />
+              <p className="text-sm text-muted-foreground">Lotes envelhecidos</p>
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground">680</p>
-            <p className="text-xs text-success mt-2 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              +15%
-            </p>
+            <p className="text-3xl font-bold text-foreground">{stats?.expiringLots || 0}</p>
+            <p className="text-xs text-muted-foreground mt-2">Torra há mais de 60 dias</p>
           </CardContent>
         </Card>
 
         <Card className="border-border bg-white">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Cafés vendidos</p>
-              <DollarSign className="w-5 h-5 text-primary" />
+              <p className="text-sm text-muted-foreground">Margem projetada</p>
+              <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalSaleValue || 0)}</p>
-            <p className="text-xs text-success mt-2 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              +8%
-            </p>
+            <p className="text-3xl font-bold text-foreground">{profitMarginPercent}%</p>
+            <p className="text-xs text-muted-foreground mt-2">Sobre receita potencial</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 bg-white">
           <CardHeader>
-            <CardTitle className="text-lg">Kg por Categoria</CardTitle>
-            <CardDescription>
-              Últimos 30 dias <span className="text-success">+5%</span>
-            </CardDescription>
+            <CardTitle className="text-lg">Volume por Categoria (kg)</CardTitle>
+            <CardDescription>Distribuição do estoque ativo</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end justify-between h-64 gap-8 px-4">
-              {categoryData.map((item, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                  <div
-                    className="w-full rounded-t-lg transition-all hover:opacity-80"
-                    style={{
-                      backgroundColor: item.fill,
-                      height: `${(item.value / Math.max(...categoryData.map((d) => d.value))) * 100}%`,
-                      minHeight: "60px",
-                    }}
-                  />
-                  <p className="text-sm font-medium text-foreground mt-3">{item.name}</p>
-                </div>
-              ))}
-            </div>
+            {categoryData.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
+                Nenhum lote ativo cadastrado
+              </div>
+            ) : (
+              <div className="flex items-end justify-between h-64 gap-8 px-4">
+                {categoryData.map((item, i) => {
+                  const max = Math.max(...categoryData.map((d) => d.value))
+                  const heightPct = max > 0 ? (item.value / max) * 100 : 0
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
+                      <p className="text-sm font-medium text-foreground mb-2">
+                        {item.value.toLocaleString("pt-BR")} kg
+                      </p>
+                      <div
+                        className="w-full rounded-t-lg transition-all hover:opacity-80"
+                        style={{
+                          backgroundColor: item.fill,
+                          height: `${heightPct}%`,
+                          minHeight: "40px",
+                        }}
+                      />
+                      <p className="text-sm font-medium text-foreground mt-3">{item.name}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             <div className="text-center mt-6">
-              <p className="text-2xl font-bold text-foreground">1.500 kg</p>
-              <p className="text-sm text-muted-foreground">
-                Últimos 30 dias <span className="text-success">+5%</span>
-              </p>
+              <p className="text-2xl font-bold text-foreground">{totalKg.toLocaleString("pt-BR")} kg</p>
+              <p className="text-sm text-muted-foreground">Volume ativo total</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle className="text-lg">Distribuição por Status</CardTitle>
-            <CardDescription>
-              Últimos 30 dias <span className="text-success">+12%</span>
-            </CardDescription>
+            <CardDescription>Todos os lotes cadastrados</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
+            {statusData.length === 0 ? (
+              <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">
+                Sem dados
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} lote(s)`]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 mt-4">
+                  {statusData.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                        <span className="text-sm text-foreground">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{item.percent}%</span>
+                    </div>
                   ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2 mt-4">
-              {statusData.map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-sm text-foreground">{item.name}</span>
-                  </div>
-                  <span className="text-sm font-medium text-foreground">{item.value}%</span>
                 </div>
-              ))}
-            </div>
-            <div className="text-center mt-6">
-              <p className="text-2xl font-bold text-foreground">2.770 un.</p>
-              <p className="text-sm text-muted-foreground">
-                Últimos 30 dias <span className="text-success">+12%</span>
-              </p>
-            </div>
+                <div className="text-center mt-6">
+                  <p className="text-2xl font-bold text-foreground">
+                    {statusData.reduce((sum, item) => sum + item.value, 0)} lotes
+                  </p>
+                  <p className="text-sm text-muted-foreground">Total cadastrado</p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Resumo Financeiro */}
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-6">Resumo Financeiro</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white">
             <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Valor Total Investido</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Valor Total Investido</p>
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
               <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalCost || 0)}</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
             <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Receita Total Potencial</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Receita Total Potencial</p>
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
               <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalSaleValue || 0)}</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white">
             <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">Lucro Líquido Acumulado</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Lucro Líquido Projetado</p>
+                <DollarSign className="w-5 h-5 text-primary" />
+              </div>
               <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.profitMargin || 0)}</p>
             </CardContent>
           </Card>
