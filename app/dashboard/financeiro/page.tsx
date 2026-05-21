@@ -81,43 +81,43 @@ export default function FinanceiroPage() {
     .slice(0, 5)
 
   if (loading) {
-    return <div className="text-sm text-gray-500">Carregando análise financeira...</div>
+    return <div className="text-sm text-muted-foreground">Carregando análise financeira...</div>
   }
 
   if (error) {
-    return <div className="text-sm text-red-600">{error}</div>
+    return <div className="text-sm text-destructive">{error}</div>
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Análise Financeira</h1>
-        <p className="text-sm text-gray-500">Acompanhe custos, receita potencial e rentabilidade dos lotes ativos.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Análise Financeira</h1>
+        <p className="text-sm text-muted-foreground">Acompanhe custos, receita potencial e rentabilidade dos lotes ativos.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Custo Total</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(totalCost)}</p>
+            <p className="text-sm text-muted-foreground">Custo Total</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(totalCost)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Receita Potencial</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(potentialRevenue)}</p>
+            <p className="text-sm text-muted-foreground">Receita Potencial</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(potentialRevenue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Lucro Estimado</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatCurrency(estimatedProfit)}</p>
+            <p className="text-sm text-muted-foreground">Lucro Estimado</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(estimatedProfit)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <p className="text-sm text-gray-500">Margem de Lucro</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{formatPercent(profitMargin)}</p>
+            <p className="text-sm text-muted-foreground">Margem de Lucro</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{formatPercent(profitMargin)}</p>
           </CardContent>
         </Card>
       </div>
@@ -130,7 +130,7 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             {categoryData.length === 0 ? (
-              <p className="text-sm text-gray-500">Ainda não há lotes ativos para analisar.</p>
+              <p className="text-sm text-muted-foreground">Ainda não há lotes ativos para analisar.</p>
             ) : (
               <>
                 <ResponsiveContainer width="100%" height={240}>
@@ -165,17 +165,17 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {topLots.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhum lote ativo encontrado.</p>
+              <p className="text-sm text-muted-foreground">Nenhum lote ativo encontrado.</p>
             ) : (
               topLots.map((lot) => (
                 <div key={lot.id} className="flex items-center justify-between border-b pb-3 last:border-b-0 last:pb-0">
                   <div>
-                    <p className="font-medium text-gray-900">{lot.name}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-foreground">{lot.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       {lot.quantity} kg · {lot.category}
                     </p>
                   </div>
-                  <span className="font-semibold text-gray-900">{formatCurrency(lot.quantity * lot.salePrice)}</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(lot.quantity * lot.salePrice)}</span>
                 </div>
               ))
             )}
@@ -192,7 +192,7 @@ export default function FinanceiroPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b text-left text-gray-500">
+                <tr className="border-b text-left text-muted-foreground">
                   <th className="pb-3 font-medium">Lote</th>
                   <th className="pb-3 font-medium">Categoria</th>
                   <th className="pb-3 font-medium">Quantidade</th>
@@ -205,7 +205,7 @@ export default function FinanceiroPage() {
               <tbody>
                 {lots.map((lot) => (
                   <tr key={lot.id} className="border-b last:border-b-0">
-                    <td className="py-3 font-medium text-gray-900">{lot.name}</td>
+                    <td className="py-3 font-medium text-foreground">{lot.name}</td>
                     <td className="py-3">{lot.category}</td>
                     <td className="py-3">{lot.quantity} kg</td>
                     <td className="py-3">{formatCurrency(lot.costPrice)}</td>

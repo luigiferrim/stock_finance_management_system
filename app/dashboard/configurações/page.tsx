@@ -92,10 +92,10 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Configurações</h1>
-        <p className="text-sm text-gray-500">Gerencie os dados da conta e a segurança do acesso.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+        <p className="text-sm text-muted-foreground">Gerencie os dados da conta e a segurança do acesso.</p>
       </div>
 
       <div className="space-y-6">
@@ -157,7 +157,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               {message ? (
-                <p className={`text-sm ${message.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                <p className={`text-sm ${message.type === "success" ? "text-green-600" : "text-destructive"}`}>
                   {message.text}
                 </p>
               ) : null}

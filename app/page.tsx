@@ -12,8 +12,8 @@ export default function HomePage() {
             <Coffee className="h-12 w-12 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Stock & Finance</h1>
-            <p className="mt-1 text-muted-foreground">Base inicial com autenticacao separada por modulo.</p>
+            <h1 className="text-3xl font-bold text-foreground">Stockfee</h1>
+            <p className="mt-1 text-muted-foreground">Gerenciamento inteligente de café para cafeterias e torrefadoras.</p>
           </div>
         </div>
 
@@ -30,9 +30,6 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          Esta fase prepara auth sem misturar com estoque, financeiro ou dashboard final.
-        </p>
       </div>
     </div>
   )
