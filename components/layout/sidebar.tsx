@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Coffee, LayoutDashboard, Package, TrendingUp, History, Settings, LogOut, X } from "lucide-react"
+import { LayoutDashboard, Package, TrendingUp, History, Settings, LogOut, X } from "lucide-react"
 import { signOut } from "next-auth/react"
+
+import { StockfeeLogo } from "@/components/icons/stockfee-logo"
 
 interface SidebarProps {
   isOpen?: boolean
@@ -43,7 +45,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="p-6 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#8B6F47] rounded-lg flex items-center justify-center">
-              <Coffee className="w-6 h-6 text-white" />
+              <StockfeeLogo className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="font-bold text-base">Stockfee</h1>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { Coffee } from "lucide-react"
+import { StockfeeLogo } from "@/components/icons/stockfee-logo"
 
 type AuthShellProps = {
   title: string
@@ -14,7 +14,7 @@ export function AuthShell({ title, description, children }: AuthShellProps) {
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <Coffee className="h-8 w-8 text-primary-foreground" />
+            <StockfeeLogo className="h-8 w-8 text-primary-foreground" />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground">{title}</h1>
