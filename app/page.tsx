@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { Coffee } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { StockfeeLogo } from "@/components/icons/stockfee-logo"
 
 export default function HomePage() {
   return (
@@ -9,7 +9,7 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-8 text-center">
         <div className="flex flex-col items-center gap-4">
           <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary">
-            <Coffee className="h-12 w-12 text-primary-foreground" />
+            <StockfeeLogo className="h-12 w-12 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">Stockfee</h1>
