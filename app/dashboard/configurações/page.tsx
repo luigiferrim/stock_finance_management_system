@@ -92,7 +92,7 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
         <p className="text-sm text-muted-foreground">Gerencie os dados da conta e a segurança do acesso.</p>

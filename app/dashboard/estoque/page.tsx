@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, AlertTriangle, Pencil, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 
 interface Lot {
   id: string
@@ -29,6 +30,7 @@ export default function EstoquePage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [editingLot, setEditingLot] = useState<Lot | null>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     fetchLots()
@@ -127,7 +129,7 @@ export default function EstoquePage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">Controle de Estoque</h1>
@@ -138,7 +140,7 @@ export default function EstoquePage() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou categoria..."
+          placeholder={isMobile ? "Buscar..." : "Buscar por nome ou categoria..."}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 bg-white"
@@ -146,8 +148,8 @@ export default function EstoquePage() {
       </div>
 
       {/* Tabela */}
-      <div className="bg-white rounded-lg border border-border overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-lg border border-border overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead className="bg-muted/30">
             <tr className="border-b border-border">
               <th className="text-left p-4 text-sm font-semibold text-foreground">NOME DO CAFÉ</th>
