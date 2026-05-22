@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 
 interface NewLotModalProps {
   onSuccess: () => void
@@ -37,6 +38,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const isMobile = useIsMobile()
   const [formData, setFormData] = useState({
     name: "",
     quantity: "",
@@ -163,7 +165,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#8B6F47] hover:bg-[#8B6F47]/90">Novo Lote</Button>
+        <Button>Novo Lote</Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -185,14 +187,14 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             <Label htmlFor="name">Nome do Café *</Label>
             <Input
               id="name"
-              placeholder="Ex: Grão Especial Microlote"
+              placeholder={isMobile ? "Nome do café" : "Ex: Grão Especial Microlote"}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Categoria *</Label>
               <Select
@@ -224,12 +226,12 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="variety">Variedade</Label>
               <Input
                 id="variety"
-                placeholder="Ex: Bourbon Amarelo"
+                placeholder={isMobile ? "Variedade" : "Ex: Bourbon Amarelo"}
                 value={formData.variety}
                 onChange={(e) => setFormData({ ...formData, variety: e.target.value })}
               />
@@ -238,14 +240,14 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
               <Label htmlFor="process">Processo</Label>
               <Input
                 id="process"
-                placeholder="Ex: Natural, Lavado"
+                placeholder={isMobile ? "Processo" : "Ex: Natural, Lavado"}
                 value={formData.process}
                 onChange={(e) => setFormData({ ...formData, process: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costPrice">Preço de Compra (R$/kg) *</Label>
               <Input
@@ -284,7 +286,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="roastDate">Data da Torra</Label>
               <Input
@@ -319,7 +321,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-[#8B6F47] hover:bg-[#8B6F47]/90">
+            <Button type="submit" disabled={loading}>
               {loading ? "Salvando..." : editLot ? "Atualizar Lote" : "Salvar Lote"}
             </Button>
           </div>

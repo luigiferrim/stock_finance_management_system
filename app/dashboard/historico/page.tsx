@@ -8,6 +8,7 @@ import { AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 
 interface Log {
   id: string
@@ -58,6 +59,7 @@ export default function HistoricoPage() {
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedAction, setSelectedAction] = useState("all")
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -146,7 +148,7 @@ export default function HistoricoPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <Input
-              placeholder="Buscar por detalhes, usuário, e-mail ou lote"
+              placeholder={isMobile ? "Buscar..." : "Buscar por detalhes, usuário, e-mail ou lote"}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
