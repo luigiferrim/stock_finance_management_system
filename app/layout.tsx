@@ -9,9 +9,43 @@ import "./globals.css"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+const siteDescription =
+  "Stockfee ajuda torrefarias pequenas a controlar lotes de café, estoque, margem financeira, alertas e auditoria."
+
 export const metadata: Metadata = {
-  title: "Stock & Finance Management System",
-  description: "Base de autenticacao e organizacao inicial do projeto",
+  metadataBase: new URL(siteUrl),
+  title: "Stockfee | Gestão de lotes e margem para torrefarias",
+  description: siteDescription,
+  applicationName: "Stockfee",
+  keywords: [
+    "Stockfee",
+    "gestão de torrefaria",
+    "controle de lotes de café",
+    "estoque de café",
+    "margem financeira",
+    "auditoria operacional",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Stockfee | Gestão de lotes e margem para torrefarias",
+    description: siteDescription,
+    url: "/",
+    siteName: "Stockfee",
+    locale: "pt_BR",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  twitter: {
+    card: "summary",
+    title: "Stockfee | Gestão de lotes e margem para torrefarias",
+    description: siteDescription,
+  },
 }
 
 export default function RootLayout({

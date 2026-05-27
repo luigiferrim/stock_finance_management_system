@@ -60,7 +60,7 @@ export function RegisterForm() {
   }
 
   return (
-    <AuthShell title="Crie sua conta" description="Cadastro inicial separado em modulo proprio de auth.">
+    <AuthShell title="Crie sua conta" description="Comece a organizar os lotes da sua torrefaria no Stockfee.">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="name">Nome completo</Label>

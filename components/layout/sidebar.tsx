@@ -14,13 +14,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/estoque", label: "Controle de Estoque", icon: Package },
-    { href: "/financeiro", label: "Análise Financeira", icon: TrendingUp },
-    { href: "/historico", label: "Histórico e Alertas", icon: History },
+    { href: "/dashboard/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/estoque", label: "Controle de Estoque", icon: Package },
+    { href: "/dashboard/financeiro", label: "Análise Financeira", icon: TrendingUp },
+    { href: "/dashboard/historico", label: "Histórico e Alertas", icon: History },
   ]
 
-  const isActive = (href: string) => pathname === href
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   const handleLinkClick = () => {
     if (onClose) onClose()
@@ -46,7 +46,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               <Coffee className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-base">Caferri</h1>
+              <h1 className="font-bold text-base">Stockfee</h1>
               <p className="text-xs text-white/60">Painel de Gestão</p>
             </div>
           </div>
@@ -84,10 +84,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         {/* Footer */}
         <div className="p-4 border-t border-white/10 space-y-1">
           <Link
-            href="/configuracoes"
+            href="/dashboard/configurações"
             onClick={handleLinkClick}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-              isActive("/configuracoes") ? "bg-[#8B6F47] text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+              isActive("/dashboard/configurações")
+                ? "bg-[#8B6F47] text-white"
+                : "text-white/70 hover:bg-white/5 hover:text-white"
             }`}
           >
             <Settings className="w-5 h-5" />

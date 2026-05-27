@@ -52,7 +52,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
   }
 
   return (
-    <AuthShell title="Acesse sua conta" description="Base de autenticacao separada do restante do sistema.">
+    <AuthShell title="Acesse sua conta" description="Entre no Stockfee para gerenciar lotes, estoque e margem.">
       <form onSubmit={handleSubmit} className="space-y-6">
         {registered && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
