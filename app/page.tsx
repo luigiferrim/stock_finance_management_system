@@ -7,10 +7,8 @@ import {
   CircleDollarSign,
   ClipboardList,
   Coffee,
-  Database,
   History,
   Package,
-  ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
@@ -31,7 +29,7 @@ const featureCards = [
   },
   {
     title: "Audite a operação",
-    description: "Mantenha o histórico de logins, cadastros, edições, status, exclusões e trocas de senha.",
+    description: "Mantenha o histórico das movimentações críticas para revisar decisões e evitar retrabalho.",
     icon: History,
   },
 ]
@@ -47,8 +45,6 @@ const proofStats = [
   { value: "60+", label: "dias para alerta de torra" },
   { value: "4", label: "métricas financeiras" },
 ]
-
-const integrations = ["NextAuth", "Neon", "PostgreSQL", "Recharts"]
 
 const plans = [
   {
@@ -94,8 +90,8 @@ const faqs = [
     answer: "Nome, quantidade, custo/kg, venda/kg, fornecedor, categoria, variedade, processo, torra e status.",
   },
   {
-    question: "O dashboard exige autenticação?",
-    answer: "Sim. A landing, login e cadastro são públicos; qualquer rota em /dashboard exige sessão.",
+    question: "Como o Stockfee ajuda na rotina diária?",
+    answer: "Ele centraliza lotes, status, estoque, margem e histórico para a equipe tomar decisões com menos retrabalho.",
   },
   {
     question: "Os planos cobram automaticamente?",
@@ -212,8 +208,8 @@ export default function HomePage() {
                 Uma tela para enxergar lote, estoque, alerta e margem.
               </h2>
               <p className="mt-6 max-w-xl text-lg leading-8 text-[#706963]">
-                O painel interno mantém os módulos atuais: Dashboard, Estoque, Financeiro, Histórico e Configurações,
-                com navegação direta dentro da área autenticada.
+                O painel mantém os módulos de visão geral, estoque, financeiro, histórico e configurações em uma
+                navegação simples para a rotina da equipe.
               </p>
             </div>
 
@@ -275,8 +271,8 @@ export default function HomePage() {
             Confiança baseada em dados de rotina
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-[#706963]">
-            O Stockfee organiza informações que a torrefaria já usa todos os dias, sem exigir novos contratos de API ou
-            mudanças no banco nesta etapa.
+            O Stockfee organiza informações que a torrefaria já usa todos os dias, com foco em decisões de compra,
+            produção, giro e preço.
           </p>
 
           <div className="mx-auto mt-14 grid max-w-5xl gap-4 sm:grid-cols-3">
@@ -288,14 +284,18 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="mx-auto mt-14 max-w-5xl border-t border-[#ded9d1] pt-10">
-            <p className="text-sm font-medium uppercase text-[#706963]">Integrações e base técnica</p>
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {integrations.map((integration) => (
-                <div key={integration} className="rounded-full border border-[#ded9d1] bg-white px-4 py-3 text-sm font-semibold">
-                  {integration}
-                </div>
-              ))}
+          <div className="mx-auto mt-14 grid max-w-5xl gap-4 border-t border-[#ded9d1] pt-10 sm:grid-cols-3">
+            <div className="rounded-lg border border-[#ded9d1] bg-white p-6 text-left">
+              <p className="font-semibold">Compra mais clara</p>
+              <p className="mt-2 text-sm leading-6 text-[#706963]">Compare lotes ativos antes de novas encomendas.</p>
+            </div>
+            <div className="rounded-lg border border-[#ded9d1] bg-white p-6 text-left">
+              <p className="font-semibold">Giro acompanhado</p>
+              <p className="mt-2 text-sm leading-6 text-[#706963]">Encontre cafés parados antes que percam prioridade.</p>
+            </div>
+            <div className="rounded-lg border border-[#ded9d1] bg-white p-6 text-left">
+              <p className="font-semibold">Preço com margem</p>
+              <p className="mt-2 text-sm leading-6 text-[#706963]">Use custo e venda por kg para proteger resultado.</p>
             </div>
           </div>
         </section>
@@ -357,7 +357,7 @@ export default function HomePage() {
             <div>
               <h2 className="text-5xl font-semibold leading-tight">Perguntas frequentes</h2>
               <p className="mt-6 max-w-md text-lg leading-8 text-[#706963]">
-                Respostas curtas sobre escopo, autenticação, lotes e próximos passos do Stockfee.
+                Respostas curtas sobre escopo, lotes, rotina operacional e próximos passos do Stockfee.
               </p>
             </div>
 
@@ -389,12 +389,12 @@ export default function HomePage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 rounded-full border border-[#ded9d1] px-4 py-2 text-sm text-[#706963]">
-                <Database className="h-4 w-4" />
-                Sem alteração de schema
+                <Coffee className="h-4 w-4" />
+                Foco em torrefarias
               </div>
               <div className="flex items-center gap-2 rounded-full border border-[#ded9d1] px-4 py-2 text-sm text-[#706963]">
-                <ShieldCheck className="h-4 w-4" />
-                Dashboard autenticado
+                <TrendingUp className="h-4 w-4" />
+                Margem por lote
               </div>
             </div>
           </div>
