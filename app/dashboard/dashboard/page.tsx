@@ -129,7 +129,10 @@ export default function DashboardPage() {
       ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
       : "0"
 
-  const firstName = sessionStatus === "loading" ? null : (session?.user?.name?.split(" ")[0] ?? "usuário")
+  const firstName =
+    sessionStatus === "authenticated" && session?.user?.name
+      ? session.user.name.split(" ")[0]
+      : null
 
   if (loading) {
     return (

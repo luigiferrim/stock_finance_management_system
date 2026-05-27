@@ -27,16 +27,20 @@ export function TopNav() {
     return pathname.startsWith(href)
   }
 
-  const firstName = sessionStatus !== "loading" ? (session?.user?.name?.split(" ")[0] ?? "Usuário") : null
-  const initials = sessionStatus !== "loading" && session?.user?.name
-    ? session.user.name
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : null
+  const firstName =
+    sessionStatus === "authenticated" && session?.user?.name
+      ? session.user.name.split(" ")[0]
+      : null
+  const initials =
+    sessionStatus === "authenticated" && session?.user?.name
+      ? session.user.name
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+      : null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#e6e0d9] bg-[#faf8f5]/95 backdrop-blur-sm">
