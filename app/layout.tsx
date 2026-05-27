@@ -10,8 +10,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Stock & Finance Management System",
-  description: "Base de autenticacao e organizacao inicial do projeto",
+  title: "Stockfee — Gerenciamento Inteligente de Café",
+  description: "Sistema de gerenciamento de estoque e análise financeira para cafeterias e torrefadoras.",
 }
 
 export default function RootLayout({

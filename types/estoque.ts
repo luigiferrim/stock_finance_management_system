@@ -1,4 +1,6 @@
-export type LoteStatus = "Encomendado" | "Chegou" | "Em Estoque" | "Embalado" | "Vendido";
+import type { LotCategory, LotStatus } from "@/lib/stock/constants";
+
+export type LoteStatus = LotStatus;
 
 export interface Lote {
     id: string;
@@ -7,7 +9,7 @@ export interface Lote {
     costPrice: number;
     salePrice: number;
     supplier: string | null;
-    category: "Blend" | "Single Origin";
+    category: LotCategory;
     variety: string | null;
     process: string | null;
     roastDate: string | null;

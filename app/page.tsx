@@ -1,7 +1,7 @@
 import Link from "next/link"
-import { Coffee } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { StockfeeLogo } from "@/components/icons/stockfee-logo"
 
 export default function HomePage() {
   return (
@@ -9,11 +9,11 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-8 text-center">
         <div className="flex flex-col items-center gap-4">
           <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary">
-            <Coffee className="h-12 w-12 text-primary-foreground" />
+            <StockfeeLogo className="h-12 w-12 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Stock & Finance</h1>
-            <p className="mt-1 text-muted-foreground">Base inicial com autenticacao separada por modulo.</p>
+            <h1 className="text-3xl font-bold text-foreground">Stockfee</h1>
+            <p className="mt-1 text-muted-foreground">Gerenciamento inteligente de café para cafeterias e torrefadoras.</p>
           </div>
         </div>
 
@@ -30,9 +30,6 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          Esta fase prepara auth sem misturar com estoque, financeiro ou dashboard final.
-        </p>
       </div>
     </div>
   )

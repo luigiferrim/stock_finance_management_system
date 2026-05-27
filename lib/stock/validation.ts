@@ -4,12 +4,15 @@ import {
   validateOptionalDate,
   validateText,
 } from "@/lib/security/validation"
+import {
+  DEFAULT_LOT_STATUS,
+  LOT_CATEGORIES,
+  LOT_STATUSES,
+  type LotCategory,
+  type LotStatus,
+} from "@/lib/stock/constants"
 
-export const LOT_CATEGORIES = ["Blend", "Single Origin"] as const
-export const LOT_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado", "Vendido"] as const
-
-type LotCategory = (typeof LOT_CATEGORIES)[number]
-type LotStatus = (typeof LOT_STATUSES)[number]
+export { DEFAULT_LOT_STATUS, LOT_CATEGORIES, LOT_STATUSES }
 
 export type LotPayload = {
   name: string
@@ -63,7 +66,10 @@ export function validateCreateLotPayload(body: Record<string, unknown>): Validat
   const category = validateEnum(body.category, LOT_CATEGORIES, "Categoria")
   if (!category.valid) return category
 
-  const status = body.status === undefined || body.status === "" ? { valid: true as const, value: "Em Estoque" as const } : validateEnum(body.status, LOT_STATUSES, "Status")
+  const status =
+    body.status === undefined || body.status === ""
+      ? { valid: true as const, value: DEFAULT_LOT_STATUS }
+      : validateEnum(body.status, LOT_STATUSES, "Status")
   if (!status.valid) return status
 
   const supplier = validateText(body.supplier, { field: "Fornecedor", maxLength: 120 })

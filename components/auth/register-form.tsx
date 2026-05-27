@@ -31,7 +31,7 @@ export function RegisterForm() {
     }
 
     if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      setError("A senha deve conter pelo menos uma letra e um numero")
+      setError("A senha deve conter pelo menos uma letra e um número")
       return
     }
 
@@ -60,7 +60,7 @@ export function RegisterForm() {
   }
 
   return (
-    <AuthShell title="Crie sua conta" description="Cadastro inicial separado em modulo proprio de auth.">
+    <AuthShell title="Crie sua conta" description="Crie uma conta para gerenciar o estoque e as finanças da sua cafeteria.">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="name">Nome completo</Label>
@@ -86,7 +86,7 @@ export function RegisterForm() {
             <Input
               id="email"
               type="email"
-              placeholder="Insira seu endereco de e-mail"
+              placeholder="Insira seu endereço de e-mail"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -133,7 +133,7 @@ export function RegisterForm() {
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Ja tem uma conta? </span>
+          <span className="text-muted-foreground">Já tem uma conta? </span>
           <Link href="/login" className="font-medium text-primary underline underline-offset-4">
             Fazer login
           </Link>

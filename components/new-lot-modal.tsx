@@ -15,6 +15,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useIsMobile } from "@/lib/hooks/use-is-mobile"
+import { notifyStockChanged } from "@/lib/stock/client-events"
+import { DEFAULT_LOT_STATUS, LOT_CATEGORIES, LOT_STATUSES } from "@/lib/stock/constants"
 
 interface NewLotModalProps {
   onSuccess: () => void
@@ -33,11 +36,25 @@ interface NewLotModalProps {
   } | null
 }
 
+type LotFormData = {
+  name: string
+  quantity: string
+  costPrice: string
+  salePrice: string
+  supplier: string
+  category: string
+  variety: string
+  process: string
+  roastDate: string
+  status: string
+}
+
 export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [formData, setFormData] = useState({
+  const isMobile = useIsMobile()
+  const [formData, setFormData] = useState<LotFormData>({
     name: "",
     quantity: "",
     costPrice: "",
@@ -47,7 +64,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
     variety: "",
     process: "",
     roastDate: "",
-    status: "Em Estoque",
+    status: DEFAULT_LOT_STATUS,
   })
 
   useEffect(() => {
@@ -64,7 +81,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: editLot.variety || "",
         process: editLot.process || "",
         roastDate: formattedRoastDate,
-        status: editLot.status || "Em Estoque",
+        status: editLot.status || DEFAULT_LOT_STATUS,
       })
       setOpen(true)
     }
@@ -116,7 +133,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: formData.variety?.trim() || "",
         process: formData.process?.trim() || "",
         roastDate: formData.roastDate || "",
-        status: formData.status || "Em Estoque",
+        status: formData.status || DEFAULT_LOT_STATUS,
       }
 
       const url = editLot ? `/api/lots/${editLot.id}` : "/api/lots"
@@ -146,9 +163,10 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: "",
         process: "",
         roastDate: "",
-        status: "Em Estoque",
+        status: DEFAULT_LOT_STATUS,
       })
       setOpen(false)
+      notifyStockChanged()
       onSuccess()
     } catch (error) {
       console.error(`Erro ao ${editLot ? "atualizar" : "criar"} lote:`, error)
@@ -163,7 +181,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-[#8B6F47] hover:bg-[#8B6F47]/90">Novo Lote</Button>
+        <Button>Novo Lote</Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -185,14 +203,14 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             <Label htmlFor="name">Nome do Café *</Label>
             <Input
               id="name"
-              placeholder="Ex: Grão Especial Microlote"
+              placeholder={isMobile ? "Nome do café" : "Ex: Grão Especial Microlote"}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Categoria *</Label>
               <Select
@@ -204,8 +222,11 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Blend">Blend</SelectItem>
-                  <SelectItem value="Single Origin">Single Origin</SelectItem>
+                  {LOT_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -224,12 +245,12 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="variety">Variedade</Label>
               <Input
                 id="variety"
-                placeholder="Ex: Bourbon Amarelo"
+                placeholder={isMobile ? "Variedade" : "Ex: Bourbon Amarelo"}
                 value={formData.variety}
                 onChange={(e) => setFormData({ ...formData, variety: e.target.value })}
               />
@@ -238,14 +259,14 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
               <Label htmlFor="process">Processo</Label>
               <Input
                 id="process"
-                placeholder="Ex: Natural, Lavado"
+                placeholder={isMobile ? "Processo" : "Ex: Natural, Lavado"}
                 value={formData.process}
                 onChange={(e) => setFormData({ ...formData, process: e.target.value })}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costPrice">Preço de Compra (R$/kg) *</Label>
               <Input
@@ -284,7 +305,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="roastDate">Data da Torra</Label>
               <Input
@@ -305,11 +326,11 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Encomendado">Encomendado</SelectItem>
-                  <SelectItem value="Chegou">Chegou</SelectItem>
-                  <SelectItem value="Em Estoque">Em Estoque</SelectItem>
-                  <SelectItem value="Embalado">Embalado</SelectItem>
-                  <SelectItem value="Vendido">Vendido</SelectItem>
+                  {LOT_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -319,7 +340,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="bg-[#8B6F47] hover:bg-[#8B6F47]/90">
+            <Button type="submit" disabled={loading}>
               {loading ? "Salvando..." : editLot ? "Atualizar Lote" : "Salvar Lote"}
             </Button>
           </div>

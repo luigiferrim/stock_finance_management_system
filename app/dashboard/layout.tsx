@@ -15,7 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen bg-background">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main className="flex-1 lg:ml-64 w-full">
+        <main className="flex-1 lg:ml-64 w-full min-w-0">
           <div className="lg:hidden sticky top-0 z-30 bg-white border-b border-border px-4 py-3 flex items-center gap-3">
             <Button
               variant="ghost"
@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu className="w-6 h-6" />
             </Button>
-            <h2 className="font-semibold text-lg text-foreground">Caferri</h2>
+            <h2 className="font-semibold text-lg text-foreground">Stockfee</h2>
           </div>
 
           {children}
