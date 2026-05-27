@@ -12,6 +12,132 @@ O **Stockfee** é uma aplicação web full-stack voltada para cafeterias e torre
 
 ---
 
+## 📋 Levantamento de Requisitos
+
+### Objetivo do Sistema
+
+O Stockfee deve apoiar cafeterias e torrefadoras no controle operacional e financeiro de lotes de café. O sistema precisa centralizar o cadastro dos lotes, acompanhar o status do estoque, calcular indicadores financeiros e registrar ações relevantes para consulta posterior.
+
+### Público-Alvo
+
+- Pequenas torrefadoras que precisam controlar lotes de café torrado ou em processo de produção.
+- Cafeterias que trabalham com diferentes fornecedores, variedades e processos de café.
+- Equipes que ainda dependem de planilhas para acompanhar estoque, custos, preços e histórico de alterações.
+
+### Problemas Identificados
+
+- Dificuldade para saber quais lotes estão ativos, vendidos, embalados ou em estoque.
+- Falta de visão consolidada sobre custo, preço de venda, lucro estimado e margem.
+- Risco de perda de qualidade em cafés com torra antiga.
+- Baixa rastreabilidade sobre quem alterou, criou, vendeu ou excluiu informações.
+- Acesso manual e disperso a dados que deveriam estar em um painel único.
+
+### Requisitos Funcionais
+
+| Código | Requisito |
+|--------|-----------|
+| RF01 | O sistema deve permitir cadastro de usuários. |
+| RF02 | O sistema deve permitir login de usuários cadastrados. |
+| RF03 | O sistema deve proteger o painel interno contra acesso não autenticado. |
+| RF04 | O sistema deve permitir alteração de senha do usuário autenticado. |
+| RF05 | O sistema deve permitir cadastrar lotes de café. |
+| RF06 | O sistema deve permitir editar dados de lotes cadastrados. |
+| RF07 | O sistema deve permitir excluir lotes cadastrados. |
+| RF08 | O sistema deve permitir alterar o status de um lote. |
+| RF09 | O sistema deve listar os lotes cadastrados no módulo de estoque. |
+| RF10 | O sistema deve diferenciar lotes por status: `Encomendado`, `Chegou`, `Em Estoque`, `Embalado` e `Vendido`. |
+| RF11 | O sistema deve considerar como ativos todos os lotes que não estejam com status `Vendido`. |
+| RF12 | O sistema deve registrar nome, quantidade, custo por kg, venda por kg, fornecedor, categoria, variedade, processo, data de torra e status de cada lote. |
+| RF13 | O sistema deve classificar os lotes nas categorias `Blend` e `Single Origin`. |
+| RF14 | O sistema deve exibir uma visão geral com total de lotes ativos. |
+| RF15 | O sistema deve exibir o volume total de café ativo em kg. |
+| RF16 | O sistema deve alertar sobre lotes com torra acima de 60 dias. |
+| RF17 | O sistema deve calcular custo total dos lotes ativos. |
+| RF18 | O sistema deve calcular receita potencial dos lotes ativos. |
+| RF19 | O sistema deve calcular lucro estimado dos lotes ativos. |
+| RF20 | O sistema deve calcular margem projetada dos lotes ativos. |
+| RF21 | O sistema deve exibir análise financeira por lote ou categoria. |
+| RF22 | O sistema deve registrar histórico de ações críticas. |
+| RF23 | O sistema deve registrar no histórico ações de login, cadastro, criação de lote, edição de lote, alteração de status, exclusão de lote e troca de senha. |
+| RF24 | O sistema deve disponibilizar uma landing page pública para apresentação do produto. |
+| RF25 | A landing page deve conter chamadas para login e cadastro. |
+
+### Requisitos Não Funcionais
+
+| Código | Requisito |
+|--------|-----------|
+| RNF01 | A interface deve estar em português do Brasil. |
+| RNF02 | O sistema deve ser responsivo para desktop e mobile. |
+| RNF03 | A navegação principal deve ser clara e consistente entre os módulos. |
+| RNF04 | O sistema deve ter aparência profissional e adequada ao contexto de cafeterias e torrefadoras. |
+| RNF05 | O painel deve priorizar leitura rápida de dados operacionais. |
+| RNF06 | Senhas devem ser armazenadas com hash seguro. |
+| RNF07 | Rotas privadas devem exigir sessão válida. |
+| RNF08 | Ações sensíveis devem ser registradas para auditoria. |
+| RNF09 | O sistema deve aplicar limites básicos contra excesso de tentativas de autenticação. |
+| RNF10 | A aplicação deve ser implantável em ambiente web. |
+
+### Regras de Negócio
+
+| Código | Regra |
+|--------|-------|
+| RN01 | Um lote vendido não deve ser considerado estoque ativo. |
+| RN02 | A margem deve ser calculada com base no custo total e na receita potencial dos lotes ativos. |
+| RN03 | Lotes com data de torra superior a 60 dias devem aparecer como alerta operacional. |
+| RN04 | O status de um lote deve seguir o fluxo operacional definido pelo sistema. |
+| RN05 | Alterações críticas devem gerar registro no histórico para rastreabilidade. |
+| RN06 | O cadastro de usuário deve exigir senha com critérios mínimos de segurança. |
+
+### Requisitos de Dados
+
+| Entidade | Dados principais |
+|----------|------------------|
+| Usuário | Nome, e-mail, senha criptografada e dados de sessão. |
+| Lote | Nome, quantidade, custo por kg, venda por kg, fornecedor, categoria, variedade, processo, data da torra e status. |
+| Histórico | Usuário responsável, ação realizada, detalhes, lote relacionado quando aplicável e data da ação. |
+
+### Perfis de Usuário
+
+| Perfil | Necessidade |
+|--------|-------------|
+| Gestor da torrefadora | Acompanhar estoque, margem, alertas e histórico geral da operação. |
+| Operador de estoque | Cadastrar, editar e atualizar status de lotes. |
+| Responsável financeiro | Consultar custo, receita potencial, lucro estimado e margem. |
+
+### Escopo Atual
+
+- Landing pública de apresentação.
+- Cadastro e login de usuários.
+- Painel interno autenticado.
+- Módulos de dashboard, estoque, financeiro, histórico e configurações.
+- CRUD de lotes.
+- Indicadores operacionais e financeiros.
+- Histórico de auditoria.
+
+### Fora do Escopo Atual
+
+- Venda real com baixa automática de estoque.
+- Controle de múltiplas empresas por conta.
+- Perfis de permissão avançados.
+- Exportação de relatórios.
+- Verificação de e-mail.
+- Integração com sistemas externos.
+- Cobrança ou assinatura dentro da aplicação.
+
+### Critérios de Aceitação
+
+- A página inicial deve abrir sem login.
+- Os botões da página inicial devem direcionar para login e cadastro.
+- Usuários sem sessão devem ser redirecionados ao tentar acessar o painel.
+- Usuários autenticados devem conseguir navegar pelos módulos internos.
+- O usuário deve conseguir criar, editar, excluir e alterar status de lotes.
+- O dashboard deve exibir métricas de estoque e margem com base nos lotes ativos.
+- Lotes com torra acima de 60 dias devem aparecer como alerta.
+- Ações críticas devem aparecer no histórico.
+- A documentação deve orientar instalação, execução e entendimento do escopo do sistema.
+
+---
+
 ## 👥 Integrantes do Grupo
 
 | Nome | Matrícula |
