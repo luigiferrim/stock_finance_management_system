@@ -37,7 +37,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
         setError(
           result.error === "TooManyAttempts"
             ? "Muitas tentativas. Aguarde antes de tentar novamente."
-            : "Email ou senha inválidos",
+            : "Email ou senha invalidos",
         )
         setLoading(false)
         return
@@ -52,11 +52,11 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
   }
 
   return (
-    <AuthShell title="Acesse sua conta" description="Acesse o painel da sua cafeteria.">
+    <AuthShell title="Acesse sua conta" description="Entre no Stockfee para gerenciar lotes, estoque e margem.">
       <form onSubmit={handleSubmit} className="space-y-6">
         {registered && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-            Conta criada com sucesso. Agora faça login.
+            Conta criada com sucesso. Agora faca login.
           </div>
         )}
 
