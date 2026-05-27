@@ -46,8 +46,8 @@ export default function ConfiguracoesPage() {
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
 
   useEffect(() => {
-    setProfileName(session?.user.name ?? "")
-  }, [session?.user.name])
+    setProfileName(session?.user?.name ?? "")
+  }, [session?.user?.name])
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -142,7 +142,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  const currentSessionName = session?.user.name ?? ""
+  const currentSessionName = session?.user?.name ?? ""
   const isProfileUnchanged = profileName.trim() === currentSessionName
 
   return (
@@ -173,7 +173,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" value={session?.user.email ?? ""} disabled />
+                  <Input id="email" value={session?.user?.email ?? ""} disabled />
                 </div>
               </div>
 
