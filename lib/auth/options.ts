@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { createAuthLog, findUserByEmail, updateUserPasswordHash } from "@/lib/auth/user-repository"
-import { normalizeEmail, validateEmail } from "@/lib/auth/validation"
+import { normalizeEmail, validateEmail, validateName } from "@/lib/auth/validation"
 import { getClientIp } from "@/lib/security/request"
 import { createRateLimiter } from "@/lib/security/rate-limit"
 
@@ -90,9 +90,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
+        token.name = user.name
+        token.email = user.email
+      }
+
+      const updatedName = session?.user?.name
+      if (trigger === "update" && typeof updatedName === "string") {
+        const trimmedName = updatedName.trim()
+
+        if (validateName(trimmedName)) {
+          token.name = trimmedName
+        }
       }
 
       return token
@@ -100,6 +111,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.name = typeof token.name === "string" ? token.name : session.user.name
+        session.user.email = typeof token.email === "string" ? token.email : session.user.email
       }
 
       return session
