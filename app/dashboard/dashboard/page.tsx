@@ -1,226 +1,270 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import type React from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
-import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts"
+import { Package, AlertTriangle, TrendingUp, DollarSign, Layers } from "lucide-react"
+import { NewLotModal } from "@/components/new-lot-modal"
+import { STOCK_DATA_CHANGED_EVENT, STOCK_DATA_CHANGED_STORAGE_KEY } from "@/lib/stock/client-events"
 
 interface Stats {
   totalLots: number
+  totalRegisteredLots: number
+  totalKg: number
   totalCost: number
   totalSaleValue: number
   profitMargin: number
   expiringLots: number
-}
-
-interface Lot {
-  id: string
-  name: string
-  quantity: number
-  costPrice: number
-  salePrice: number
-  category: string
-  status: string
-}
-
-const ACTIVE_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado"]
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Blend: "rgb(180, 140, 100)",
-  "Single Origin": "rgb(121, 85, 72)",
+  categoryBreakdown: { category: string; quantity: number }[]
+  statusBreakdown: { status: string; count: number; percent: number }[]
+  monthlyBreakdown: { month: string; category: string; quantity: number }[]
+  updatedAt: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  Encomendado: "rgb(91, 122, 168)",
-  Chegou: "rgb(140, 110, 175)",
-  "Em Estoque": "rgb(95, 145, 95)",
-  Embalado: "rgb(210, 145, 70)",
-  Vendido: "rgb(140, 140, 140)",
+  Encomendado: "rgb(91,122,168)",
+  Chegou: "rgb(140,110,175)",
+  "Em Estoque": "rgb(95,145,95)",
+  Embalado: "rgb(210,145,70)",
+  Vendido: "rgb(140,140,140)",
 }
 
-const FALLBACK_COLOR = "rgb(170, 150, 130)"
+const CAT_COLORS: Record<string, string> = {
+  "Single Origin": "#795548",
+  Blend: "#b48c64",
+}
+
+const FALLBACK_COLOR = "rgb(170,150,130)"
+const FALLBACK_CAT = "#a09080"
+
+const PT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
 export default function DashboardPage() {
+  const { data: session, status: sessionStatus } = useSession()
   const [stats, setStats] = useState<Stats | null>(null)
-  const [lots, setLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, lotsRes] = await Promise.all([
-          fetch("/api/dashboard/stats"),
-          fetch("/api/lots"),
-        ])
-        const statsData = await statsRes.json()
-        const lotsData = await lotsRes.json()
-        setStats(statsData)
-        setLots(Array.isArray(lotsData) ? lotsData : [])
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/dashboard/stats", { cache: "no-store" })
+      if (!res.ok) throw new Error("Não foi possível carregar o dashboard.")
+      setStats(await res.json())
+    } catch (err) {
+      console.error("Erro ao buscar dados:", err)
+    } finally {
+      setLoading(false)
     }
-
-    fetchData()
   }, [])
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+  useEffect(() => {
+    let cancelled = false
+    const refetch = () => { if (!cancelled) void fetchData() }
+    const handleVisibility = () => { if (document.visibilityState === "visible") refetch() }
+    const handleStorage = (e: StorageEvent) => { if (e.key === STOCK_DATA_CHANGED_STORAGE_KEY) refetch() }
 
-  const activeLots = useMemo(
-    () => lots.filter((lot) => ACTIVE_STATUSES.includes(lot.status)),
-    [lots],
+    refetch()
+    window.addEventListener("focus", refetch)
+    window.addEventListener(STOCK_DATA_CHANGED_EVENT, refetch)
+    window.addEventListener("storage", handleStorage)
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener("focus", refetch)
+      window.removeEventListener(STOCK_DATA_CHANGED_EVENT, refetch)
+      window.removeEventListener("storage", handleStorage)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [fetchData])
+
+  const formatCurrency = (v: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
+
+  const monthlyChartData = useMemo(() => {
+    const rows = stats?.monthlyBreakdown ?? []
+    const monthMap = new Map<string, Record<string, number>>()
+    for (const row of rows) {
+      if (!monthMap.has(row.month)) monthMap.set(row.month, {})
+      monthMap.get(row.month)![row.category] = row.quantity
+    }
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([ym, cats]) => {
+        const idx = parseInt(ym.split("-")[1] ?? "1", 10) - 1
+        return { month: PT_MONTHS[idx] ?? ym, ...cats }
+      })
+  }, [stats])
+
+  const chartCategories = useMemo(
+    () => [...new Set((stats?.monthlyBreakdown ?? []).map((r) => r.category))],
+    [stats],
   )
 
-  const totalKg = useMemo(
-    () => activeLots.reduce((sum, lot) => sum + Number(lot.quantity || 0), 0),
-    [activeLots],
+  const statusData = useMemo(
+    () =>
+      (stats?.statusBreakdown ?? []).map((item) => ({
+        name: item.status,
+        value: item.count,
+        percent: item.percent,
+        fill: STATUS_COLORS[item.status] ?? FALLBACK_COLOR,
+      })),
+    [stats],
   )
 
-  const categoryData = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const lot of activeLots) {
-      const category = lot.category || "Sem categoria"
-      map.set(category, (map.get(category) || 0) + Number(lot.quantity || 0))
-    }
-    return Array.from(map.entries()).map(([name, value]) => ({
-      name,
-      value,
-      fill: CATEGORY_COLORS[name] || FALLBACK_COLOR,
-    }))
-  }, [activeLots])
-
-  const statusData = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const lot of lots) {
-      if (!lot.status) continue
-      map.set(lot.status, (map.get(lot.status) || 0) + 1)
-    }
-    const total = Array.from(map.values()).reduce((sum, value) => sum + value, 0) || 1
-    return Array.from(map.entries()).map(([name, count]) => ({
-      name,
-      value: count,
-      percent: Math.round((count / total) * 100),
-      fill: STATUS_COLORS[name] || FALLBACK_COLOR,
-    }))
-  }, [lots])
-
-  const profitMarginPercent =
+  const profitMarginPct =
     stats?.totalSaleValue && stats.totalSaleValue > 0
       ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
       : "0"
 
+  const firstName =
+    sessionStatus === "authenticated" && session?.user?.name
+      ? session.user.name.split(" ")[0]
+      : null
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-muted-foreground">Carregando...</div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="text-muted-foreground text-sm">Carregando...</div>
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Visão Geral</h1>
-        <p className="text-muted-foreground mt-1">Acompanhe as métricas mais importantes do seu negócio.</p>
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Bem-vindo{firstName ? `, ${firstName}` : ""} ☕
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Resumo dos lotes, volume e receita potencial da sua torrefação.
+          </p>
+        </div>
+        <NewLotModal onSuccess={fetchData} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-border bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Lotes ativos</p>
-              <Package className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-3xl font-bold text-foreground">{stats?.totalLots || 0}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Encomendado, Chegou, Em Estoque e Embalado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Volume total</p>
-              <Package className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-3xl font-bold text-foreground">{totalKg.toLocaleString("pt-BR")} kg</p>
-            <p className="text-xs text-muted-foreground mt-2">Somatório de lotes ativos</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Lotes envelhecidos</p>
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
-            </div>
-            <p className="text-3xl font-bold text-foreground">{stats?.expiringLots || 0}</p>
-            <p className="text-xs text-muted-foreground mt-2">Torra há mais de 60 dias</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">Margem projetada</p>
-              <TrendingUp className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-3xl font-bold text-foreground">{profitMarginPercent}%</p>
-            <p className="text-xs text-muted-foreground mt-2">Sobre receita potencial</p>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          label="Lotes ativos"
+          value={String(stats?.totalLots ?? 0)}
+          sub="Encomendado, Chegou, Em Estoque e Embalado"
+          icon={<Package className="w-5 h-5 text-[#795548]" />}
+          iconBg="bg-[#795548]/10"
+        />
+        <KpiCard
+          label="Volume total"
+          value={`${(stats?.totalKg ?? 0).toLocaleString("pt-BR")} kg`}
+          sub="Somatório de lotes ativos"
+          icon={<Layers className="w-5 h-5 text-[#795548]" />}
+          iconBg="bg-[#795548]/10"
+        />
+        <KpiCard
+          label="Envelhecidos"
+          value={String(stats?.expiringLots ?? 0)}
+          sub="Torra há mais de 60 dias"
+          icon={<AlertTriangle className="w-5 h-5 text-amber-600" />}
+          iconBg="bg-amber-500/10"
+          valueClassName={(stats?.expiringLots ?? 0) > 0 ? "text-amber-600" : undefined}
+        />
+        <KpiCard
+          label="Margem projetada"
+          value={`${profitMarginPct}%`}
+          sub="Sobre receita potencial"
+          icon={<TrendingUp className="w-5 h-5 text-[#5a7a44]" />}
+          iconBg="bg-[#5a7a44]/10"
+          valueClassName="text-[#5a7a44]"
+        />
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-white">
-          <CardHeader>
-            <CardTitle className="text-lg">Volume por Categoria (kg)</CardTitle>
-            <CardDescription>Distribuição do estoque ativo</CardDescription>
+        {/* Grouped bar chart */}
+        <Card className="lg:col-span-2 rounded-2xl border-0 shadow-sm bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Volume por categoria</CardTitle>
+            <CardDescription>Distribuição do estoque ativo (kg)</CardDescription>
           </CardHeader>
           <CardContent>
-            {categoryData.length === 0 ? (
-              <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
-                Nenhum lote ativo cadastrado
+            {monthlyChartData.length === 0 ? (
+              <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
+                Nenhum dado disponível
               </div>
             ) : (
-              <div className="flex items-end justify-between h-64 gap-8 px-4">
-                {categoryData.map((item, i) => {
-                  const max = Math.max(...categoryData.map((d) => d.value))
-                  const heightPct = max > 0 ? (item.value / max) * 100 : 0
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                      <p className="text-sm font-medium text-foreground mb-2">
-                        {item.value.toLocaleString("pt-BR")} kg
-                      </p>
-                      <div
-                        className="w-full rounded-t-lg transition-all hover:opacity-80"
-                        style={{
-                          backgroundColor: item.fill,
-                          height: `${heightPct}%`,
-                          minHeight: "40px",
-                        }}
-                      />
-                      <p className="text-sm font-medium text-foreground mt-3">{item.name}</p>
-                    </div>
-                  )
-                })}
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={monthlyChartData} barGap={4} barCategoryGap="30%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e6e0d9" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#6e5a4b" }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "#6e5a4b" }}
+                    width={40}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid #e6e0d9",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                      fontSize: 13,
+                    }}
+                    formatter={(v: unknown) => [
+                      `${Number(v).toLocaleString("pt-BR")} kg`,
+                    ]}
+                  />
+                  {chartCategories.map((cat) => (
+                    <Bar
+                      key={cat}
+                      dataKey={cat}
+                      name={cat}
+                      fill={CAT_COLORS[cat] ?? FALLBACK_CAT}
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={36}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+            {chartCategories.length > 0 && (
+              <div className="flex items-center gap-5 mt-3 px-1">
+                {chartCategories.map((cat) => (
+                  <div key={cat} className="flex items-center gap-1.5 text-xs text-[#6e5a4b]">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: CAT_COLORS[cat] ?? FALLBACK_CAT }}
+                    />
+                    {cat}
+                  </div>
+                ))}
               </div>
             )}
-            <div className="text-center mt-6">
-              <p className="text-2xl font-bold text-foreground">{totalKg.toLocaleString("pt-BR")} kg</p>
-              <p className="text-sm text-muted-foreground">Volume ativo total</p>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white">
-          <CardHeader>
-            <CardTitle className="text-lg">Distribuição por Status</CardTitle>
-            <CardDescription>Todos os lotes cadastrados</CardDescription>
+        {/* Donut */}
+        <Card className="rounded-2xl border-0 shadow-sm bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Status dos lotes</CardTitle>
+            <CardDescription>Distribuição atual</CardDescription>
           </CardHeader>
           <CardContent>
             {statusData.length === 0 ? (
@@ -229,40 +273,51 @@ export default function DashboardPage() {
               </div>
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} lote(s)`]} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="relative">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={statusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={78}
+                        paddingAngle={2}
+                        dataKey="value"
+                        strokeWidth={0}
+                      >
+                        {statusData.map((entry, i) => (
+                          <Cell key={i} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid #e6e0d9",
+                          fontSize: 13,
+                        }}
+                        formatter={(v) => [`${v} lote(s)`]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <p className="text-2xl font-bold text-foreground">{stats?.totalRegisteredLots ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">lotes</p>
+                  </div>
+                </div>
                 <div className="space-y-2 mt-4">
                   {statusData.map((item, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                        <span className="text-sm text-foreground">{item.name}</span>
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-xs text-foreground">{item.name}</span>
                       </div>
-                      <span className="text-sm font-medium text-foreground">{item.percent}%</span>
+                      <span className="text-xs font-semibold text-foreground">{item.percent}%</span>
                     </div>
                   ))}
-                </div>
-                <div className="text-center mt-6">
-                  <p className="text-2xl font-bold text-foreground">
-                    {statusData.reduce((sum, item) => sum + item.value, 0)} lotes
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total cadastrado</p>
                 </div>
               </>
             )}
@@ -270,40 +325,64 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Financial summary */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-6">Resumo Financeiro</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-muted-foreground">Valor Total Investido</p>
-                <DollarSign className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalCost || 0)}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-muted-foreground">Receita Total Potencial</p>
-                <DollarSign className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.totalSaleValue || 0)}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-muted-foreground">Lucro Líquido Projetado</p>
-                <DollarSign className="w-5 h-5 text-primary" />
-              </div>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(stats?.profitMargin || 0)}</p>
-            </CardContent>
-          </Card>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Resumo Financeiro</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <KpiCard
+            label="Valor total investido"
+            value={formatCurrency(stats?.totalCost ?? 0)}
+            icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+            iconBg="bg-[#795548]/10"
+          />
+          <KpiCard
+            label="Receita total potencial"
+            value={formatCurrency(stats?.totalSaleValue ?? 0)}
+            icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+            iconBg="bg-[#795548]/10"
+          />
+          <KpiCard
+            label="Lucro líquido projetado"
+            value={formatCurrency(stats?.profitMargin ?? 0)}
+            icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
+            iconBg="bg-[#5a7a44]/10"
+            valueClassName={(stats?.profitMargin ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
+          />
         </div>
       </div>
     </div>
+  )
+}
+
+function KpiCard({
+  label,
+  value,
+  sub,
+  icon,
+  iconBg,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  sub?: string
+  icon: React.ReactNode
+  iconBg: string
+  valueClassName?: string
+}) {
+  return (
+    <Card className="rounded-2xl border-0 shadow-sm bg-white">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+            <p className={`text-2xl font-bold mt-2 ${valueClassName ?? "text-foreground"}`}>{value}</p>
+            {sub && <p className="text-xs text-muted-foreground mt-1.5 leading-snug">{sub}</p>}
+          </div>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
