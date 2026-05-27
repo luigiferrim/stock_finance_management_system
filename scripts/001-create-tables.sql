@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS lots (
   process VARCHAR(255),
   roast_date TIMESTAMP,
   expiry_date TIMESTAMP,
-  status VARCHAR(50) DEFAULT 'active',
+  status VARCHAR(50) DEFAULT 'Em Estoque',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Search, AlertTriangle, Pencil, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
+import { notifyStockChanged } from "@/lib/stock/client-events"
+import { LOT_STATUSES } from "@/lib/stock/constants"
 
 interface Lot {
   id: string
@@ -47,7 +49,7 @@ export default function EstoquePage() {
 
   const fetchLots = async () => {
     try {
-      const response = await fetch("/api/lots")
+      const response = await fetch("/api/lots", { cache: "no-store" })
       const data = await response.json()
       setLots(data)
       setFilteredLots(data)
@@ -62,7 +64,11 @@ export default function EstoquePage() {
     if (!confirm("Tem certeza que deseja deletar este lote?")) return
 
     try {
-      await fetch(`/api/lots/${id}/delete`, { method: "POST" })
+      const response = await fetch(`/api/lots/${id}/delete`, { method: "POST" })
+
+      if (!response.ok) throw new Error("Erro ao deletar lote")
+
+      notifyStockChanged()
       fetchLots()
     } catch (error) {
       console.error("Erro ao deletar lote:", error)
@@ -86,12 +92,6 @@ export default function EstoquePage() {
     }).format(value)
   }
 
-  const getDaysUntilExpiry = (expiryDate: string | null) => {
-    if (!expiryDate) return null
-    const days = Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    return days
-  }
-
   const handleStatusChange = async (lotId: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/lots/${lotId}`, {
@@ -102,6 +102,7 @@ export default function EstoquePage() {
 
       if (!response.ok) throw new Error("Erro ao atualizar status")
 
+      notifyStockChanged()
       fetchLots()
     } catch (error) {
       console.error("Erro ao atualizar status:", error)
@@ -183,11 +184,11 @@ export default function EstoquePage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Encomendado">Encomendado</SelectItem>
-                        <SelectItem value="Chegou">Chegou</SelectItem>
-                        <SelectItem value="Em Estoque">Em Estoque</SelectItem>
-                        <SelectItem value="Embalado">Embalado</SelectItem>
-                        <SelectItem value="Vendido">Vendido</SelectItem>
+                        {LOT_STATUSES.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </td>

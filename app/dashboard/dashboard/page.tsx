@@ -4,26 +4,34 @@ import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts"
 import { Package, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
+import {
+  STOCK_DATA_CHANGED_EVENT,
+  STOCK_DATA_CHANGED_STORAGE_KEY,
+} from "@/lib/stock/client-events"
 
 interface Stats {
   totalLots: number
+  totalRegisteredLots: number
+  totalKg: number
   totalCost: number
   totalSaleValue: number
   profitMargin: number
   expiringLots: number
+  categoryBreakdown: CategoryBreakdown[]
+  statusBreakdown: StatusBreakdown[]
+  updatedAt: string
 }
 
-interface Lot {
-  id: string
-  name: string
-  quantity: number
-  costPrice: number
-  salePrice: number
+interface CategoryBreakdown {
   category: string
-  status: string
+  quantity: number
 }
 
-const ACTIVE_STATUSES = ["Encomendado", "Chegou", "Em Estoque", "Embalado"]
+interface StatusBreakdown {
+  status: string
+  count: number
+  percent: number
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   Blend: "rgb(180, 140, 100)",
@@ -42,75 +50,90 @@ const FALLBACK_COLOR = "rgb(170, 150, 130)"
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
-  const [lots, setLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchData = async () => {
       try {
-        const [statsRes, lotsRes] = await Promise.all([
-          fetch("/api/dashboard/stats"),
-          fetch("/api/lots"),
-        ])
+        const statsRes = await fetch("/api/dashboard/stats", { cache: "no-store" })
+
+        if (!statsRes.ok) {
+          throw new Error("Não foi possível carregar o dashboard.")
+        }
+
         const statsData = await statsRes.json()
-        const lotsData = await lotsRes.json()
-        setStats(statsData)
-        setLots(Array.isArray(lotsData) ? lotsData : [])
+
+        if (!cancelled) {
+          setStats(statsData)
+        }
       } catch (error) {
         console.error("Erro ao buscar dados:", error)
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
-    fetchData()
+    const refetchData = () => {
+      void fetchData()
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refetchData()
+      }
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === STOCK_DATA_CHANGED_STORAGE_KEY) {
+        refetchData()
+      }
+    }
+
+    refetchData()
+    window.addEventListener("focus", refetchData)
+    window.addEventListener(STOCK_DATA_CHANGED_EVENT, refetchData)
+    window.addEventListener("storage", handleStorageChange)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener("focus", refetchData)
+      window.removeEventListener(STOCK_DATA_CHANGED_EVENT, refetchData)
+      window.removeEventListener("storage", handleStorageChange)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
   }, [])
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
-  const activeLots = useMemo(
-    () => lots.filter((lot) => ACTIVE_STATUSES.includes(lot.status)),
-    [lots],
-  )
-
-  const totalKg = useMemo(
-    () => activeLots.reduce((sum, lot) => sum + Number(lot.quantity || 0), 0),
-    [activeLots],
-  )
-
   const categoryData = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const lot of activeLots) {
-      const category = lot.category || "Sem categoria"
-      map.set(category, (map.get(category) || 0) + Number(lot.quantity || 0))
-    }
-    return Array.from(map.entries()).map(([name, value]) => ({
-      name,
-      value,
-      fill: CATEGORY_COLORS[name] || FALLBACK_COLOR,
+    return (stats?.categoryBreakdown ?? []).map((item) => ({
+      name: item.category,
+      value: item.quantity,
+      fill: CATEGORY_COLORS[item.category] || FALLBACK_COLOR,
     }))
-  }, [activeLots])
+  }, [stats])
 
   const statusData = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const lot of lots) {
-      if (!lot.status) continue
-      map.set(lot.status, (map.get(lot.status) || 0) + 1)
-    }
-    const total = Array.from(map.values()).reduce((sum, value) => sum + value, 0) || 1
-    return Array.from(map.entries()).map(([name, count]) => ({
-      name,
-      value: count,
-      percent: Math.round((count / total) * 100),
-      fill: STATUS_COLORS[name] || FALLBACK_COLOR,
+    return (stats?.statusBreakdown ?? []).map((item) => ({
+      name: item.status,
+      value: item.count,
+      percent: item.percent,
+      fill: STATUS_COLORS[item.status] || FALLBACK_COLOR,
     }))
-  }, [lots])
+  }, [stats])
 
   const profitMarginPercent =
     stats?.totalSaleValue && stats.totalSaleValue > 0
       ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
       : "0"
+
+  const totalKg = stats?.totalKg || 0
 
   if (loading) {
     return (
@@ -260,7 +283,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-center mt-6">
                   <p className="text-2xl font-bold text-foreground">
-                    {statusData.reduce((sum, item) => sum + item.value, 0)} lotes
+                    {stats?.totalRegisteredLots || 0} lotes
                   </p>
                   <p className="text-sm text-muted-foreground">Total cadastrado</p>
                 </div>

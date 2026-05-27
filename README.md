@@ -75,6 +75,23 @@ A aplicação ficará disponível em `http://localhost:3000`.
 
 ---
 
+## 🗄️ Banco de Dados
+
+Execute as migrations SQL versionadas em ordem no Neon SQL Editor antes de usar o sistema:
+
+```text
+scripts/001-create-tables.sql
+scripts/002-update-lots-table.sql
+scripts/003-add-missing-columns.sql
+scripts/004-fix-unit-column.sql
+scripts/005-complete-database-fix.sql
+scripts/006-update-status-values.sql
+```
+
+O script `007-manual-password-reset.sql` é apenas para reset manual de senha em casos excepcionais.
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```

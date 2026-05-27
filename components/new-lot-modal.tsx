@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
+import { notifyStockChanged } from "@/lib/stock/client-events"
+import { DEFAULT_LOT_STATUS, LOT_CATEGORIES, LOT_STATUSES } from "@/lib/stock/constants"
 
 interface NewLotModalProps {
   onSuccess: () => void
@@ -34,12 +36,25 @@ interface NewLotModalProps {
   } | null
 }
 
+type LotFormData = {
+  name: string
+  quantity: string
+  costPrice: string
+  salePrice: string
+  supplier: string
+  category: string
+  variety: string
+  process: string
+  roastDate: string
+  status: string
+}
+
 export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const isMobile = useIsMobile()
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LotFormData>({
     name: "",
     quantity: "",
     costPrice: "",
@@ -49,7 +64,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
     variety: "",
     process: "",
     roastDate: "",
-    status: "Em Estoque",
+    status: DEFAULT_LOT_STATUS,
   })
 
   useEffect(() => {
@@ -66,7 +81,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: editLot.variety || "",
         process: editLot.process || "",
         roastDate: formattedRoastDate,
-        status: editLot.status || "Em Estoque",
+        status: editLot.status || DEFAULT_LOT_STATUS,
       })
       setOpen(true)
     }
@@ -118,7 +133,7 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: formData.variety?.trim() || "",
         process: formData.process?.trim() || "",
         roastDate: formData.roastDate || "",
-        status: formData.status || "Em Estoque",
+        status: formData.status || DEFAULT_LOT_STATUS,
       }
 
       const url = editLot ? `/api/lots/${editLot.id}` : "/api/lots"
@@ -148,9 +163,10 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
         variety: "",
         process: "",
         roastDate: "",
-        status: "Em Estoque",
+        status: DEFAULT_LOT_STATUS,
       })
       setOpen(false)
+      notifyStockChanged()
       onSuccess()
     } catch (error) {
       console.error(`Erro ao ${editLot ? "atualizar" : "criar"} lote:`, error)
@@ -206,8 +222,11 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Blend">Blend</SelectItem>
-                  <SelectItem value="Single Origin">Single Origin</SelectItem>
+                  {LOT_CATEGORIES.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -307,11 +326,11 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Encomendado">Encomendado</SelectItem>
-                  <SelectItem value="Chegou">Chegou</SelectItem>
-                  <SelectItem value="Em Estoque">Em Estoque</SelectItem>
-                  <SelectItem value="Embalado">Embalado</SelectItem>
-                  <SelectItem value="Vendido">Vendido</SelectItem>
+                  {LOT_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

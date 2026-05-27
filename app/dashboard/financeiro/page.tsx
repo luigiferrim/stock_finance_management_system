@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ACTIVE_LOT_STATUSES } from "@/lib/stock/constants"
 
 interface Lot {
   id: number
@@ -20,7 +21,7 @@ interface CategoryBreakdown {
   fill: string
 }
 
-const activeStatuses = new Set(["Encomendado", "Chegou", "Em Estoque", "Embalado"])
+const activeStatuses = new Set<string>(ACTIVE_LOT_STATUSES)
 const chartColors = ["#795548", "#a1887f", "#d7ccc8", "#8d6e63", "#bcaaa4"]
 
 function formatCurrency(value: number) {
@@ -42,7 +43,7 @@ export default function FinanceiroPage() {
   useEffect(() => {
     async function loadLots() {
       try {
-        const response = await fetch("/api/lots")
+        const response = await fetch("/api/lots", { cache: "no-store" })
 
         if (!response.ok) {
           throw new Error("Não foi possível carregar os lotes.")
