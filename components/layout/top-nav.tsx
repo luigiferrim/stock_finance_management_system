@@ -12,7 +12,7 @@ const navItems = [
   { href: "/dashboard/estoque", label: "Estoque", icon: Package },
   { href: "/dashboard/financeiro", label: "Financeiro", icon: TrendingUp },
   { href: "/dashboard/historico", label: "Histórico", icon: History },
-  { href: "/dashboard/configurações", label: "Configurações", icon: Settings },
+  { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
 ]
 
 export function TopNav() {

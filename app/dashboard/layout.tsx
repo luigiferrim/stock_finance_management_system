@@ -5,7 +5,12 @@ import { TopNav } from "@/components/layout/top-nav"
 import { SessionProvider } from "@/components/providers/session-provider"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions)
+  let session = null
+  try {
+    session = await getServerSession(authOptions)
+  } catch {
+    // se falhar no servidor, o cliente busca a sessão normalmente via /api/auth/session
+  }
 
   return (
     <SessionProvider session={session}>
