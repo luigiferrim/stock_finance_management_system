@@ -36,7 +36,10 @@ export async function GET() {
     const sixtyDaysAgo = new Date()
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
 
-    const [activeTotalsResult, totalRegisteredResult, expiringLotsResult, categoryRows, statusRows] =
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+    const [activeTotalsResult, totalRegisteredResult, expiringLotsResult, categoryRows, statusRows, monthlyRows] =
       await Promise.all([
         sql`
           SELECT
@@ -70,6 +73,17 @@ export async function GET() {
           GROUP BY COALESCE(status, 'Sem status')
           ORDER BY count DESC, status ASC
         `,
+        sql`
+          SELECT
+            TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+            category,
+            COALESCE(SUM(quantity), 0) AS quantity
+          FROM lots
+          WHERE status = ANY(${activeStatuses})
+            AND created_at >= ${sixMonthsAgo}
+          GROUP BY DATE_TRUNC('month', created_at), category
+          ORDER BY month ASC, category ASC
+        `,
       ])
 
     const activeTotals = activeTotalsResult[0] ?? {}
@@ -96,6 +110,12 @@ export async function GET() {
       }
     })
 
+    const monthlyBreakdown = monthlyRows.map((row) => ({
+      month: String(row.month),
+      category: String(row.category || "Sem categoria"),
+      quantity: toNumber(row.quantity),
+    }))
+
     return NextResponse.json(
       {
         totalLots,
@@ -107,6 +127,7 @@ export async function GET() {
         expiringLots,
         categoryBreakdown,
         statusBreakdown,
+        monthlyBreakdown,
         updatedAt: new Date().toISOString(),
       },
       { headers: NO_STORE_HEADERS },
@@ -125,6 +146,7 @@ export async function GET() {
         expiringLots: 0,
         categoryBreakdown: [],
         statusBreakdown: [],
+        monthlyBreakdown: [],
         updatedAt: new Date().toISOString(),
         error: "Erro ao carregar estatísticas",
       },
