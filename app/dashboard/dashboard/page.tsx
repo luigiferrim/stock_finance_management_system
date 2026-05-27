@@ -53,7 +53,7 @@ const FALLBACK_CAT = "#a09080"
 const PT_MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -129,7 +129,7 @@ export default function DashboardPage() {
       ? ((stats.profitMargin / stats.totalSaleValue) * 100).toFixed(1)
       : "0"
 
-  const firstName = session?.user?.name?.split(" ")[0] ?? "usuário"
+  const firstName = sessionStatus === "loading" ? null : (session?.user?.name?.split(" ")[0] ?? "usuário")
 
   if (loading) {
     return (
@@ -144,7 +144,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Bem-vindo, {firstName} ☕</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            Bem-vindo{firstName ? `, ${firstName}` : ""} ☕
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Resumo dos lotes, volume e receita potencial da sua torrefação.
           </p>

@@ -17,7 +17,7 @@ const navItems = [
 
 export function TopNav() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const isActive = (href: string) => {
@@ -27,8 +27,8 @@ export function TopNav() {
     return pathname.startsWith(href)
   }
 
-  const firstName = session?.user?.name?.split(" ")[0] ?? "Usuário"
-  const initials = session?.user?.name
+  const firstName = sessionStatus !== "loading" ? (session?.user?.name?.split(" ")[0] ?? "Usuário") : null
+  const initials = sessionStatus !== "loading" && session?.user?.name
     ? session.user.name
         .split(" ")
         .filter(Boolean)
@@ -36,7 +36,7 @@ export function TopNav() {
         .map((n) => n[0])
         .join("")
         .toUpperCase()
-    : "U"
+    : null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-[#e6e0d9] bg-[#faf8f5]/95 backdrop-blur-sm">
@@ -80,12 +80,14 @@ export function TopNav() {
 
           <div className="flex items-center gap-2 pl-1">
             <div className="w-8 h-8 rounded-full bg-[#795548] flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {initials}
+              {initials ?? ""}
             </div>
-            <div className="hidden lg:block leading-tight">
-              <p className="text-sm font-semibold text-[#2b221c]">{firstName}</p>
-              <p className="text-xs text-[#6e5a4b]">Admin</p>
-            </div>
+            {firstName && (
+              <div className="hidden lg:block leading-tight">
+                <p className="text-sm font-semibold text-[#2b221c]">{firstName}</p>
+                <p className="text-xs text-[#6e5a4b]">Admin</p>
+              </div>
+            )}
           </div>
 
           <button
