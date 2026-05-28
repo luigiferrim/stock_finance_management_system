@@ -49,7 +49,7 @@ const proofStats = [
 const plans = [
   {
     name: "Operação",
-    price: "R$0",
+    price: "Gratuito",
     description: "Para validar a rotina de lotes e margem em uma torrefaria pequena.",
     cta: "Criar conta",
     href: "/register",
