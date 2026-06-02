@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ACTIVE_LOT_STATUSES } from "@/lib/stock/constants"
+import { PermissionDenied } from "@/components/auth/role-gate"
+import { usePermission } from "@/lib/auth/use-permissions"
 
 interface Lot {
   id: number
@@ -36,6 +38,7 @@ function formatPercent(value: number) {
 }
 
 export default function FinanceiroPage() {
+  const canViewFinancials = usePermission("financials:view")
   const [lots, setLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +83,14 @@ export default function FinanceiroPage() {
   const topLots = [...lots]
     .sort((first, second) => second.quantity * second.salePrice - first.quantity * first.salePrice)
     .slice(0, 5)
+
+  if (!canViewFinancials) {
+    return (
+      <div className="p-6">
+        <PermissionDenied message="Análise financeira disponível apenas para Owner, Admin e Finance." />
+      </div>
+    )
+  }
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Carregando análise financeira...</div>

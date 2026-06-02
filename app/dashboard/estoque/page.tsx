@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 import { notifyStockChanged } from "@/lib/stock/client-events"
 import { LOT_STATUSES } from "@/lib/stock/constants"
+import { RoleGate } from "@/components/auth/role-gate"
 
 interface Lot {
   id: string
@@ -134,7 +135,9 @@ export default function EstoquePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">Controle de Estoque</h1>
-        <NewLotModal onSuccess={handleSuccess} editLot={editingLot} />
+        <RoleGate action="lot:create">
+          <NewLotModal onSuccess={handleSuccess} editLot={editingLot} />
+        </RoleGate>
       </div>
 
       {/* Search */}
@@ -179,18 +182,29 @@ export default function EstoquePage() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <Select value={lot.status} onValueChange={(value) => handleStatusChange(lot.id, value)}>
-                      <SelectTrigger className={`w-[140px] border ${getStatusColor(lot.status)}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {LOT_STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <RoleGate
+                      action="lot:change-status"
+                      fallback={
+                        <span
+                          className={`inline-flex w-[140px] items-center justify-center rounded-md border px-3 py-1.5 text-sm ${getStatusColor(lot.status)}`}
+                        >
+                          {lot.status}
+                        </span>
+                      }
+                    >
+                      <Select value={lot.status} onValueChange={(value) => handleStatusChange(lot.id, value)}>
+                        <SelectTrigger className={`w-[140px] border ${getStatusColor(lot.status)}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LOT_STATUSES.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </RoleGate>
                   </td>
                   <td className="p-4 text-sm text-center text-foreground">{lot.quantity} kg</td>
                   <td className="p-4 text-sm text-right text-foreground">{formatCurrency(lot.costPrice)}</td>
@@ -207,22 +221,26 @@ export default function EstoquePage() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center justify-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80 hover:bg-primary/10"
-                        onClick={() => handleEdit(lot)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                        onClick={() => handleDelete(lot.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <RoleGate action="lot:edit">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary hover:text-primary/80 hover:bg-primary/10"
+                          onClick={() => handleEdit(lot)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </RoleGate>
+                      <RoleGate action="lot:delete">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                          onClick={() => handleDelete(lot.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </RoleGate>
                     </div>
                   </td>
                 </tr>
