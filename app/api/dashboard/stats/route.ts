@@ -155,14 +155,14 @@ export async function GET() {
   } catch (error) {
     console.error("Erro ao buscar estatísticas:", error)
 
+    // Financial aggregates (totalCost/totalSaleValue/profitMargin) are intentionally
+    // omitted here: in the error path we cannot reliably know the caller's role, so we
+    // never emit them. Clients null-coalesce these fields when absent.
     return NextResponse.json(
       {
         totalLots: 0,
         totalRegisteredLots: 0,
         totalKg: 0,
-        totalCost: 0,
-        totalSaleValue: 0,
-        profitMargin: 0,
         expiringLots: 0,
         categoryBreakdown: [],
         statusBreakdown: [],
