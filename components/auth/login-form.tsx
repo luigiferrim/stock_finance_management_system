@@ -3,18 +3,20 @@
 import type React from "react"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Eye, EyeOff, Lock, Mail } from "lucide-react"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function LoginForm({ registered = false }: { registered?: boolean }) {
+function LoginFormInner({ registered = false }: { registered?: boolean }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -45,7 +47,7 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
         return
       }
 
-      router.push("/dashboard")
+      router.push(callbackUrl)
       router.refresh()
     } catch {
       setError("Erro ao fazer login")
@@ -114,11 +116,22 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
         </Button>
 
         <div className="flex items-center justify-end text-sm">
-          <Link href="/register" className="font-medium text-primary underline underline-offset-4">
+          <Link
+            href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            className="font-medium text-primary underline underline-offset-4"
+          >
             Criar nova conta
           </Link>
         </div>
       </form>
     </AuthShell>
+  )
+}
+
+export function LoginForm({ registered = false }: { registered?: boolean }) {
+  return (
+    <Suspense fallback={null}>
+      <LoginFormInner registered={registered} />
+    </Suspense>
   )
 }
