@@ -4,7 +4,11 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { createAuthLog, findUserByEmail, updateUserPasswordHash } from "@/lib/auth/user-repository"
 import { normalizeEmail, validateEmail, validateName } from "@/lib/auth/validation"
-import { findActiveOrganizationForUser } from "@/lib/organizations/context"
+import {
+  ORGANIZATION_SCHEMA_NOT_READY_ERROR,
+  findActiveOrganizationForUser,
+  isOrganizationSchemaNotReadyError,
+} from "@/lib/organizations/context"
 import { getClientIp } from "@/lib/security/request"
 import { createRateLimiter } from "@/lib/security/rate-limit"
 
@@ -89,6 +93,10 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           if (error instanceof Error && error.message === "TooManyAttempts") {
             throw error
+          }
+
+          if (isOrganizationSchemaNotReadyError(error)) {
+            throw new Error(ORGANIZATION_SCHEMA_NOT_READY_ERROR)
           }
 
           console.error("Erro na autenticacao:", error)

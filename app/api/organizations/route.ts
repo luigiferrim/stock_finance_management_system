@@ -3,7 +3,12 @@ import { getServerSession } from "next-auth"
 
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
-import { findActiveOrganizationForUser } from "@/lib/organizations/context"
+import {
+  assertOrganizationSchemaReady,
+  findActiveOrganizationForUser,
+  isOrganizationSchemaNotReadyError,
+  organizationSchemaNotReadyResponse,
+} from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger, validateText } from "@/lib/security/validation"
 
@@ -24,6 +29,8 @@ export async function POST(request: NextRequest) {
     if (!userId.valid) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
+
+    await assertOrganizationSchemaReady()
 
     const existingOrganization = await findActiveOrganizationForUser(userId.value)
     if (existingOrganization) {
@@ -87,6 +94,10 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     )
   } catch (error) {
+    if (isOrganizationSchemaNotReadyError(error)) {
+      return organizationSchemaNotReadyResponse()
+    }
+
     console.error("Erro ao criar organização:", error)
     return NextResponse.json({ error: "Erro ao criar organização" }, { status: 500 })
   }

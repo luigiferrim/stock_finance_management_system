@@ -4,7 +4,7 @@ import type React from "react"
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react"
+import { Building2, Eye, EyeOff, Lock, Mail, User } from "lucide-react"
 import { useState } from "react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 export function RegisterForm() {
   const router = useRouter()
   const [name, setName] = useState("")
+  const [organizationName, setOrganizationName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -35,13 +36,18 @@ export function RegisterForm() {
       return
     }
 
+    if (organizationName.trim().length < 2) {
+      setError("Informe o nome da organização")
+      return
+    }
+
     setLoading(true)
 
     try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, organizationName, email, password }),
       })
 
       const data = await response.json()
@@ -74,6 +80,24 @@ export function RegisterForm() {
               onChange={(event) => setName(event.target.value)}
               required
               disabled={loading}
+              className="bg-white pl-10"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="organization-name">Organização</Label>
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="organization-name"
+              type="text"
+              placeholder="Nome da torrefação ou empresa"
+              value={organizationName}
+              onChange={(event) => setOrganizationName(event.target.value)}
+              required
+              disabled={loading}
+              maxLength={100}
               className="bg-white pl-10"
             />
           </div>

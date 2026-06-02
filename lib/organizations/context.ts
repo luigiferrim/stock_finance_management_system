@@ -5,6 +5,22 @@ import { getDb } from "@/lib/db"
 import { validatePositiveInteger } from "@/lib/security/validation"
 
 export const NO_ORGANIZATION_ERROR = "Organização ativa não encontrada"
+export const ORGANIZATION_SCHEMA_NOT_READY_ERROR = "OrganizationSchemaNotReady"
+
+const ORGANIZATION_SCHEMA_ERROR_MESSAGE =
+  "Estrutura de organizações não encontrada. Rode scripts/008-create-organizations-scope.sql no banco de dados."
+
+type DatabaseError = {
+  code?: string
+  message?: string
+}
+
+export class OrganizationSchemaNotReadyError extends Error {
+  constructor() {
+    super(ORGANIZATION_SCHEMA_ERROR_MESSAGE)
+    this.name = ORGANIZATION_SCHEMA_NOT_READY_ERROR
+  }
+}
 
 export type OrganizationRole = "Owner" | "Admin" | "Member" | string
 
@@ -20,6 +36,66 @@ export type OrganizationContext =
 
 export function organizationRequiredResponse() {
   return NextResponse.json({ error: NO_ORGANIZATION_ERROR }, { status: 403 })
+}
+
+export function organizationSchemaNotReadyResponse() {
+  return NextResponse.json({ error: ORGANIZATION_SCHEMA_ERROR_MESSAGE }, { status: 503 })
+}
+
+export function isOrganizationSchemaNotReadyError(error: unknown) {
+  if (error instanceof OrganizationSchemaNotReadyError) {
+    return true
+  }
+
+  const databaseError = error as DatabaseError
+  const message = databaseError.message ?? ""
+
+  return (
+    databaseError.code === "42P01" ||
+    databaseError.code === "42703" ||
+    message.includes("organizations") ||
+    message.includes("organization_members") ||
+    message.includes("organization_id")
+  )
+}
+
+export async function assertOrganizationSchemaReady() {
+  const sql = getDb()
+  const rows = (await sql`
+    SELECT
+      to_regclass('public.organizations') IS NOT NULL AS has_organizations,
+      to_regclass('public.organization_members') IS NOT NULL AS has_organization_members,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'lots'
+          AND column_name = 'organization_id'
+      ) AS has_lots_organization_id,
+      EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'logs'
+          AND column_name = 'organization_id'
+      ) AS has_logs_organization_id
+  `) as Array<{
+    has_organizations: boolean
+    has_organization_members: boolean
+    has_lots_organization_id: boolean
+    has_logs_organization_id: boolean
+  }>
+
+  const schema = rows[0]
+
+  if (
+    !schema?.has_organizations ||
+    !schema.has_organization_members ||
+    !schema.has_lots_organization_id ||
+    !schema.has_logs_organization_id
+  ) {
+    throw new OrganizationSchemaNotReadyError()
+  }
 }
 
 export async function findActiveOrganizationForUser(userId: number): Promise<ActiveOrganization | null> {

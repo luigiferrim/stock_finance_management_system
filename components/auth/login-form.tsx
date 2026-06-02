@@ -34,11 +34,13 @@ export function LoginForm({ registered = false }: { registered?: boolean }) {
       })
 
       if (result?.error) {
-        setError(
-          result.error === "TooManyAttempts"
-            ? "Muitas tentativas. Aguarde antes de tentar novamente."
-            : "Email ou senha invalidos",
-        )
+        const errorMessages: Record<string, string> = {
+          TooManyAttempts: "Muitas tentativas. Aguarde antes de tentar novamente.",
+          OrganizationSchemaNotReady:
+            "Configuração de organizações pendente. Rode a migration 008 no banco deste ambiente.",
+        }
+
+        setError(errorMessages[result.error] ?? "Email ou senha invalidos")
         setLoading(false)
         return
       }
