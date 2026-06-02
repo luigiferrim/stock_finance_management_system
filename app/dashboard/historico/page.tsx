@@ -32,6 +32,7 @@ const ACTION_OPTIONS = [
   "access_denied",
   "security_alert",
   "upgrade_password_hash",
+  "create_organization",
 ] as const
 
 const ACTION_META: Record<string, { label: string; badgeClassName: string }> = {
@@ -47,6 +48,7 @@ const ACTION_META: Record<string, { label: string; badgeClassName: string }> = {
   access_denied: { label: "Acesso Negado", badgeClassName: "bg-orange-500/10 text-orange-600" },
   security_alert: { label: "Alerta de Segurança", badgeClassName: "bg-red-500/10 text-red-600" },
   upgrade_password_hash: { label: "Atualização de Hash", badgeClassName: "bg-gray-500/10 text-gray-600" },
+  create_organization: { label: "Criar Organização", badgeClassName: "bg-emerald-500/10 text-emerald-600" },
 }
 
 function getActionMeta(action: string) {

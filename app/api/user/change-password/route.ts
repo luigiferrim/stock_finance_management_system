@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
 import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { validatePasswordPolicy } from "@/lib/auth/validation"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 
 export async function POST(request: NextRequest) {
@@ -17,6 +18,11 @@ export async function POST(request: NextRequest) {
     const originError = requireSameOrigin(request)
     if (originError) {
       return originError
+    }
+
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const body = await parseJsonBody(request)
@@ -60,8 +66,8 @@ export async function POST(request: NextRequest) {
     `
 
     await sql`
-      INSERT INTO logs (action, details, user_id)
-      VALUES ('change_password', 'Usuário alterou sua senha', ${user.id})
+      INSERT INTO logs (user_id, organization_id, action, details)
+      VALUES (${user.id}, ${organizationContext.organization.id}, 'change_password', 'Usuário alterou sua senha')
     `
 
     return NextResponse.json({ success: true, message: "Senha alterada com sucesso" })

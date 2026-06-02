@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger } from "@/lib/security/validation"
 import { validateUpdateLotPayload } from "@/lib/stock/validation"
@@ -29,6 +30,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = validatePositiveInteger(session.user.id, "Usuário")
     if (!userId.valid) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+    }
+
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const body = await parseJsonBody(request)
@@ -61,6 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         status = COALESCE(${status ?? null}, status),
         updated_at = NOW()
       WHERE id = ${lotId.value}
+        AND organization_id = ${organizationContext.organization.id}
       RETURNING *
     `
 
@@ -75,9 +82,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       : `Lote "${name || lots[0].name}" foi atualizado`
 
     await sql`
-      INSERT INTO logs (user_id, lot_id, action, details, created_at)
+      INSERT INTO logs (user_id, organization_id, lot_id, action, details, created_at)
       VALUES (
         ${userId.value},
+        ${organizationContext.organization.id},
         ${lot.id},
         ${status ? "change_status" : "update_lot"},
         ${actionDetails},

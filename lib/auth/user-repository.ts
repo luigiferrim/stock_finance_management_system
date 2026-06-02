@@ -21,6 +21,7 @@ type CreatedUser = {
 
 type CreateAuthLogParams = {
   userId: number
+  organizationId?: number | null
   action: string
   details?: string
 }
@@ -45,12 +46,12 @@ export async function createUser({ email, name, passwordHash }: CreateUserParams
   return users[0]
 }
 
-export async function createAuthLog({ userId, action, details }: CreateAuthLogParams) {
+export async function createAuthLog({ userId, organizationId, action, details }: CreateAuthLogParams) {
   const sql = getDb()
 
   await sql`
-    INSERT INTO logs (user_id, action, details, created_at)
-    VALUES (${userId}, ${action}, ${details ?? null}, NOW())
+    INSERT INTO logs (user_id, organization_id, action, details, created_at)
+    VALUES (${userId}, ${organizationId ?? null}, ${action}, ${details ?? null}, NOW())
   `.catch(() => null)
 }
 

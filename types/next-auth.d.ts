@@ -6,6 +6,9 @@ declare module "next-auth" {
       id: string
       email: string
       name: string
+      organizationId?: string | null
+      organizationName?: string | null
+      role?: string | null
     }
   }
 
@@ -13,6 +16,9 @@ declare module "next-auth" {
     id: string
     email: string
     name: string
+    organizationId?: string | null
+    organizationName?: string | null
+    role?: string | null
   }
 }
 
@@ -21,5 +27,8 @@ declare module "next-auth/jwt" {
     id: string
     name?: string | null
     email?: string | null
+    organizationId?: string | null
+    organizationName?: string | null
+    role?: string | null
   }
 }

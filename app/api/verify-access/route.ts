@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth/options"
 import { applyRateLimit } from "@/lib/rate-limit"
 import { getDb } from "@/lib/db"
 import { validateEnvOrThrow } from "@/lib/env-check"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { getClientIp } from "@/lib/security/request"
 import { validatePositiveInteger } from "@/lib/security/validation"
@@ -31,6 +32,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
+    }
+
     const ip = getClientIp(req.headers)
 
     try {
@@ -38,9 +44,10 @@ export async function POST(req: NextRequest) {
     } catch {
       const sql = getDb()
       await sql`
-        INSERT INTO logs (user_id, action, details, created_at)
+        INSERT INTO logs (user_id, organization_id, action, details, created_at)
         VALUES (
           ${userId.value},
+          ${organizationContext.organization.id},
           'security_alert',
           ${"Múltiplas tentativas de código de acesso falhadas do IP: " + ip},
           NOW()
@@ -77,9 +84,10 @@ export async function POST(req: NextRequest) {
 
     if (!isValid) {
       await sql`
-        INSERT INTO logs (user_id, action, details, created_at)
+        INSERT INTO logs (user_id, organization_id, action, details, created_at)
         VALUES (
           ${userId.value},
+          ${organizationContext.organization.id},
           'access_denied',
           ${"Tentativa de acesso com código incorreto do IP: " + ip},
           NOW()
@@ -90,9 +98,10 @@ export async function POST(req: NextRequest) {
     }
 
     await sql`
-      INSERT INTO logs (user_id, action, details, created_at)
+      INSERT INTO logs (user_id, organization_id, action, details, created_at)
       VALUES (
         ${userId.value},
+        ${organizationContext.organization.id},
         'access_granted',
         'Acesso ao sistema concedido com código mestre',
         NOW()

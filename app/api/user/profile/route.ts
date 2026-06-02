@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { validateName } from "@/lib/auth/validation"
 import { getDb } from "@/lib/db"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger } from "@/lib/security/validation"
 
@@ -23,6 +24,11 @@ export async function PATCH(request: NextRequest) {
     const userId = validatePositiveInteger(session.user.id, "Usuário")
     if (!userId.valid) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+    }
+
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const parsedBody = await parseJsonBody<Partial<Record<"name", unknown>>>(request)
@@ -57,8 +63,14 @@ export async function PATCH(request: NextRequest) {
     const user = users[0]
 
     await sql`
-      INSERT INTO logs (user_id, action, details, created_at)
-      VALUES (${user.id}, 'change_name', 'Usuário alterou o próprio nome', NOW())
+      INSERT INTO logs (user_id, organization_id, action, details, created_at)
+      VALUES (
+        ${user.id},
+        ${organizationContext.organization.id},
+        'change_name',
+        'Usuário alterou o próprio nome',
+        NOW()
+      )
     `
 
     return NextResponse.json({

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { ACTIVE_LOT_STATUSES } from "@/lib/stock/constants"
 
 export const dynamic = "force-dynamic"
@@ -30,8 +31,14 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401, headers: NO_STORE_HEADERS })
     }
 
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
+    }
+
     const sql = getDb()
     const activeStatuses = [...ACTIVE_LOT_STATUSES]
+    const organizationId = organizationContext.organization.id
 
     const sixtyDaysAgo = new Date()
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
@@ -48,28 +55,34 @@ export async function GET() {
             COALESCE(SUM(quantity * cost_price), 0) as total_cost,
             COALESCE(SUM(quantity * sale_price), 0) as total_sale_value
           FROM lots
-          WHERE status = ANY(${activeStatuses})
-        `,
-        sql`
-          SELECT COUNT(*) as count FROM lots
+          WHERE organization_id = ${organizationId}
+            AND status = ANY(${activeStatuses})
         `,
         sql`
           SELECT COUNT(*) as count
           FROM lots
-          WHERE status = ANY(${activeStatuses})
+          WHERE organization_id = ${organizationId}
+        `,
+        sql`
+          SELECT COUNT(*) as count
+          FROM lots
+          WHERE organization_id = ${organizationId}
+            AND status = ANY(${activeStatuses})
             AND roast_date IS NOT NULL
             AND roast_date <= ${sixtyDaysAgo}
         `,
         sql`
           SELECT category, COALESCE(SUM(quantity), 0) as quantity
           FROM lots
-          WHERE status = ANY(${activeStatuses})
+          WHERE organization_id = ${organizationId}
+            AND status = ANY(${activeStatuses})
           GROUP BY category
           ORDER BY quantity DESC, category ASC
         `,
         sql`
           SELECT COALESCE(status, 'Sem status') as status, COUNT(*) as count
           FROM lots
+          WHERE organization_id = ${organizationId}
           GROUP BY COALESCE(status, 'Sem status')
           ORDER BY count DESC, status ASC
         `,
@@ -79,7 +92,8 @@ export async function GET() {
             category,
             COALESCE(SUM(quantity), 0) AS quantity
           FROM lots
-          WHERE status = ANY(${activeStatuses})
+          WHERE organization_id = ${organizationId}
+            AND status = ANY(${activeStatuses})
             AND created_at >= ${sixMonthsAgo}
           GROUP BY DATE_TRUNC('month', created_at), category
           ORDER BY month ASC, category ASC

@@ -19,6 +19,9 @@ export function TopNav() {
   const pathname = usePathname()
   const { data: session, status: sessionStatus } = useSession()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isOnboarding = pathname.startsWith("/dashboard/onboarding")
+  const organizationName =
+    sessionStatus === "authenticated" && session?.user?.organizationName ? session.user.organizationName : null
 
   const isActive = (href: string) => {
     if (href === "/dashboard/dashboard") {
@@ -54,22 +57,24 @@ export function TopNav() {
         </Link>
 
         {/* Pill nav — desktop */}
-        <nav className="hidden md:flex items-center bg-[#ece7df] rounded-full p-1 gap-0.5">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                isActive(href)
-                  ? "bg-white text-[#2b221c] shadow-sm"
-                  : "text-[#6e5a4b] hover:text-[#2b221c] hover:bg-white/60"
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
-            </Link>
-          ))}
-        </nav>
+        {!isOnboarding && (
+          <nav className="hidden md:flex items-center bg-[#ece7df] rounded-full p-1 gap-0.5">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  isActive(href)
+                    ? "bg-white text-[#2b221c] shadow-sm"
+                    : "text-[#6e5a4b] hover:text-[#2b221c] hover:bg-white/60"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <div className="flex-1" />
 
@@ -89,7 +94,9 @@ export function TopNav() {
             {firstName && (
               <div className="hidden lg:block leading-tight">
                 <p className="text-sm font-semibold text-[#2b221c]">{firstName}</p>
-                <p className="text-xs text-[#6e5a4b]">Admin</p>
+                <p className="max-w-[160px] truncate text-xs text-[#6e5a4b]">
+                  {organizationName ?? "Sem organização"}
+                </p>
               </div>
             )}
           </div>
@@ -102,19 +109,20 @@ export function TopNav() {
             <LogOut className="w-4 h-4" />
           </button>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Menu"
-            className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-[#6e5a4b] hover:bg-[#ece7df] transition-colors"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {!isOnboarding && (
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Menu"
+              className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-[#6e5a4b] hover:bg-[#ece7df] transition-colors"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Mobile dropdown */}
-      {mobileOpen && (
+      {mobileOpen && !isOnboarding && (
         <div className="md:hidden border-t border-[#e6e0d9] bg-[#faf8f5] px-4 py-3 space-y-1">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link

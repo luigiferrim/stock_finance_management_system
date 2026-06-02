@@ -212,6 +212,7 @@ scripts/003-add-missing-columns.sql
 scripts/004-fix-unit-column.sql
 scripts/005-complete-database-fix.sql
 scripts/006-update-status-values.sql
+scripts/008-create-organizations-scope.sql
 ```
 
 O script `007-manual-password-reset.sql` é apenas para reset manual de senha em casos excepcionais.
@@ -224,7 +225,7 @@ O script `007-manual-password-reset.sql` é apenas para reset manual de senha em
 stockfee/
 ├── app/                  # App Router do Next.js
 │   ├── api/              # Rotas de API (auth, dashboard, logs, lots, register, user, verify-access)
-│   ├── configuracoes/    # Redirect para /dashboard/configurações
+│   ├── configuracoes/    # Redirect para /dashboard/configuracoes
 │   ├── dashboard/        # Painel autenticado (estoque, financeiro, histórico, configurações)
 │   ├── estoque/          # Redirect para /dashboard/estoque
 │   ├── financeiro/       # Redirect para /dashboard/financeiro

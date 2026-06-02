@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
-import { validatePositiveInteger } from "@/lib/security/validation"
 import { validateCreateLotPayload } from "@/lib/stock/validation"
 
 // GET /api/lots - Listar todos os lotes
@@ -15,9 +15,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
+    }
+
     const sql = getDb()
     const lots = await sql`
       SELECT * FROM lots
+      WHERE organization_id = ${organizationContext.organization.id}
       ORDER BY created_at DESC
     `
 
@@ -58,9 +64,9 @@ export async function POST(request: NextRequest) {
       return originError
     }
 
-    const userId = validatePositiveInteger(session.user.id, "Usuário")
-    if (!userId.valid) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const body = await parseJsonBody(request)
@@ -88,7 +94,8 @@ export async function POST(request: NextRequest) {
         variety, 
         process, 
         roast_date, 
-        status
+        status,
+        organization_id
       )
       VALUES (
         ${name},
@@ -100,7 +107,8 @@ export async function POST(request: NextRequest) {
         ${variety},
         ${process},
         ${roastDate},
-        ${status}
+        ${status},
+        ${organizationContext.organization.id}
       )
       RETURNING *
     `
@@ -108,9 +116,10 @@ export async function POST(request: NextRequest) {
     const lot = lots[0]
 
     await sql`
-      INSERT INTO logs (user_id, lot_id, action, details, created_at)
+      INSERT INTO logs (user_id, organization_id, lot_id, action, details, created_at)
       VALUES (
-        ${userId.value},
+        ${organizationContext.userId},
+        ${organizationContext.organization.id},
         ${lot.id},
         'create_lot',
         ${`Lote "${name}" (${category}) criado com ${quantity}kg a R$${salePrice}/kg - Status: ${status}`},

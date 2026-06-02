@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
+import { requireActiveOrganization } from "@/lib/organizations/context"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +10,11 @@ export async function GET(request: NextRequest) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+    }
+
+    const organizationContext = await requireActiveOrganization(session)
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const sql = getDb()
@@ -25,6 +31,8 @@ export async function GET(request: NextRequest) {
       FROM logs
       LEFT JOIN users ON logs.user_id = users.id
       LEFT JOIN lots ON logs.lot_id = lots.id
+        AND lots.organization_id = logs.organization_id
+      WHERE logs.organization_id = ${organizationContext.organization.id}
       ORDER BY logs.created_at DESC
       LIMIT 100
     `
