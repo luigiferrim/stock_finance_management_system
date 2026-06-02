@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
-import { requireActiveOrganization } from "@/lib/organizations/context"
+import { requirePermission } from "@/lib/organizations/context"
+import { can } from "@/lib/auth/permissions"
 import { ACTIVE_LOT_STATUSES } from "@/lib/stock/constants"
 
 export const dynamic = "force-dynamic"
@@ -31,7 +32,7 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401, headers: NO_STORE_HEADERS })
     }
 
-    const organizationContext = await requireActiveOrganization(session)
+    const organizationContext = await requirePermission(session, "dashboard:view")
     if (!organizationContext.ok) {
       return organizationContext.response
     }
@@ -130,22 +131,27 @@ export async function GET() {
       quantity: toNumber(row.quantity),
     }))
 
-    return NextResponse.json(
-      {
-        totalLots,
-        totalRegisteredLots,
-        totalKg: roundCurrency(totalKg),
-        totalCost: roundCurrency(totalCost),
-        totalSaleValue: roundCurrency(totalSaleValue),
-        profitMargin: roundCurrency(profitMargin),
-        expiringLots,
-        categoryBreakdown,
-        statusBreakdown,
-        monthlyBreakdown,
-        updatedAt: new Date().toISOString(),
-      },
-      { headers: NO_STORE_HEADERS },
-    )
+    const showFinancials = can(organizationContext.role, "financials:view")
+
+    const payload = {
+      totalLots,
+      totalRegisteredLots,
+      totalKg: roundCurrency(totalKg),
+      ...(showFinancials
+        ? {
+            totalCost: roundCurrency(totalCost),
+            totalSaleValue: roundCurrency(totalSaleValue),
+            profitMargin: roundCurrency(profitMargin),
+          }
+        : {}),
+      expiringLots,
+      categoryBreakdown,
+      statusBreakdown,
+      monthlyBreakdown,
+      updatedAt: new Date().toISOString(),
+    }
+
+    return NextResponse.json(payload, { headers: NO_STORE_HEADERS })
   } catch (error) {
     console.error("Erro ao buscar estatísticas:", error)
 
