@@ -6,6 +6,9 @@ import { LayoutDashboard, Package, TrendingUp, History, Settings, LogOut, X } fr
 import { signOut } from "next-auth/react"
 
 import { StockfeeLogo } from "@/components/icons/stockfee-logo"
+import type { Action } from "@/lib/auth/permissions"
+import { can } from "@/lib/auth/permissions"
+import { useRole } from "@/lib/auth/use-permissions"
 
 interface SidebarProps {
   isOpen?: boolean
@@ -14,13 +17,16 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const role = useRole()
 
-  const navItems = [
-    { href: "/dashboard/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/estoque", label: "Controle de Estoque", icon: Package },
-    { href: "/dashboard/financeiro", label: "Análise Financeira", icon: TrendingUp },
-    { href: "/dashboard/historico", label: "Histórico e Alertas", icon: History },
+  const navItems: { href: string; label: string; icon: typeof LayoutDashboard; action: Action }[] = [
+    { href: "/dashboard/dashboard", label: "Dashboard", icon: LayoutDashboard, action: "dashboard:view" },
+    { href: "/dashboard/estoque", label: "Controle de Estoque", icon: Package, action: "stock:view" },
+    { href: "/dashboard/financeiro", label: "Análise Financeira", icon: TrendingUp, action: "financials:view" },
+    { href: "/dashboard/historico", label: "Histórico e Alertas", icon: History, action: "history:view-domain" },
   ]
+
+  const visibleNavItems = navItems.filter((item) => can(role, item.action))
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
@@ -65,7 +71,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
         {/* Navegação */}
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon
             return (
               <Link

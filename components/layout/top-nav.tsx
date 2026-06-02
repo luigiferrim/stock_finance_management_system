@@ -6,18 +6,23 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, Package, TrendingUp, History, Settings, LogOut, Bell, Menu, X } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { StockfeeLogo } from "@/components/icons/stockfee-logo"
-
-const navItems = [
-  { href: "/dashboard/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/estoque", label: "Estoque", icon: Package },
-  { href: "/dashboard/financeiro", label: "Financeiro", icon: TrendingUp },
-  { href: "/dashboard/historico", label: "Histórico", icon: History },
-  { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
-]
+import type { Action } from "@/lib/auth/permissions"
+import { can } from "@/lib/auth/permissions"
+import { useRole } from "@/lib/auth/use-permissions"
 
 export function TopNav() {
   const pathname = usePathname()
   const { data: session, status: sessionStatus } = useSession()
+  const role = useRole()
+
+  const navItems: { href: string; label: string; icon: typeof LayoutDashboard; action: Action | null }[] = [
+    { href: "/dashboard/dashboard", label: "Dashboard", icon: LayoutDashboard, action: "dashboard:view" },
+    { href: "/dashboard/estoque", label: "Estoque", icon: Package, action: "stock:view" },
+    { href: "/dashboard/financeiro", label: "Financeiro", icon: TrendingUp, action: "financials:view" },
+    { href: "/dashboard/historico", label: "Histórico", icon: History, action: "history:view-domain" },
+    { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings, action: null },
+  ]
+  const visibleNavItems = navItems.filter((item) => item.action === null || can(role, item.action))
   const [mobileOpen, setMobileOpen] = useState(false)
   const isOnboarding = pathname.startsWith("/dashboard/onboarding")
   const organizationName =
@@ -59,7 +64,7 @@ export function TopNav() {
         {/* Pill nav — desktop */}
         {!isOnboarding && (
           <nav className="hidden md:flex items-center bg-[#ece7df] rounded-full p-1 gap-0.5">
-            {navItems.map(({ href, label, icon: Icon }) => (
+            {visibleNavItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
@@ -124,7 +129,7 @@ export function TopNav() {
       {/* Mobile dropdown */}
       {mobileOpen && !isOnboarding && (
         <div className="md:hidden border-t border-[#e6e0d9] bg-[#faf8f5] px-4 py-3 space-y-1">
-          {navItems.map(({ href, label, icon: Icon }) => (
+          {visibleNavItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
