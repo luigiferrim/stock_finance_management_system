@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 
 import { authOptions } from "@/lib/auth/options"
-import { ROLES, canAssignRole, parseRole } from "@/lib/auth/permissions"
+import { canAssignRole, parseRole } from "@/lib/auth/permissions"
 import { generateToken, hashToken } from "@/lib/auth/tokens"
 import { normalizeEmail, validateEmail } from "@/lib/auth/validation"
 import { getDb } from "@/lib/db"
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
     if (!role || role === "Owner" || !canAssignRole(context.role, role)) {
       return NextResponse.json({ error: "Papel de convite inválido" }, { status: 400 })
     }
-    void ROLES
 
     const email = typeof body.data.email === "string" ? normalizeEmail(body.data.email) : ""
     if (!validateEmail(email)) {
