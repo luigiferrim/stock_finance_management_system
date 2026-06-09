@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmailCard } from "@/components/settings/email-card"
 import { MembersSection } from "@/components/settings/members-section"
+import { PermissionRequestsSection } from "@/components/settings/permission-requests-section"
+import { RequestRoleCard } from "@/components/settings/request-role-card"
 import { useRole } from "@/lib/auth/use-permissions"
 import { validateName } from "@/lib/auth/validation"
 
@@ -257,6 +259,10 @@ export default function ConfiguracoesPage() {
         <EmailCard />
 
         <MembersSection />
+
+        <PermissionRequestsSection />
+
+        <RequestRoleCard />
       </div>
     </div>
   )

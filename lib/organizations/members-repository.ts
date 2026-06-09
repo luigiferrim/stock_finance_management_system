@@ -86,6 +86,21 @@ export async function upsertMembership(organizationId: number, userId: number, r
   `
 }
 
+export async function findMembershipByUserId(organizationId: number, userId: number) {
+  const sql = getDb()
+  const rows = await sql`
+    SELECT id, user_id, role, active
+    FROM organization_members
+    WHERE organization_id = ${organizationId}
+      AND user_id = ${userId}
+      AND active = TRUE
+    LIMIT 1
+  `
+  const row = rows[0]
+  if (!row) return null
+  return { id: Number(row.id), userId: Number(row.user_id), role: row.role as string }
+}
+
 export async function findActiveMembershipByEmail(organizationId: number, email: string) {
   const sql = getDb()
   const rows = await sql`
