@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const acceptUrl = `${baseUrl}/convite/aceitar?token=${rawToken}`
 
     return NextResponse.json(
-      { id: invite.id, email, role, acceptUrl, token: rawToken, expiresAt: expiresAt.toISOString() },
+      { id: invite.id, email, role, acceptUrl, expiresAt: expiresAt.toISOString() },
       { status: 201 },
     )
   } catch (error) {
