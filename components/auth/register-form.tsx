@@ -156,11 +156,20 @@ export function RegisterForm() {
           {loading ? "Criando conta..." : "Criar conta"}
         </Button>
 
-        <div className="text-center text-sm">
-          <span className="text-muted-foreground">Ja tem uma conta? </span>
-          <Link href="/login" className="font-medium text-primary underline underline-offset-4">
-            Fazer login
-          </Link>
+        <div className="space-y-3 text-center text-sm">
+          <p className="text-muted-foreground">
+            Consulte a{" "}
+            <Link href="/politica-de-privacidade" className="font-medium text-primary underline underline-offset-4">
+              Política de Privacidade
+            </Link>{" "}
+            antes de criar sua conta.
+          </p>
+          <p>
+            <span className="text-muted-foreground">Já tem uma conta? </span>
+            <Link href="/login" className="font-medium text-primary underline underline-offset-4">
+              Fazer login
+            </Link>
+          </p>
         </div>
       </form>
     </AuthShell>
