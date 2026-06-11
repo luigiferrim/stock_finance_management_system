@@ -34,7 +34,7 @@ function RegisterFormInner() {
     }
 
     if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
-      setError("A senha deve conter pelo menos uma letra e um numero")
+      setError("A senha deve conter pelo menos uma letra e um número")
       return
     }
 
@@ -115,7 +115,7 @@ function RegisterFormInner() {
             <Input
               id="email"
               type="email"
-              placeholder="Insira seu endereco de e-mail"
+              placeholder="Insira seu endereço de e-mail"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -157,12 +157,33 @@ function RegisterFormInner() {
           </div>
         )}
 
+        <div className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+          <input
+            id="terms"
+            type="checkbox"
+            required
+            disabled={loading}
+            className="mt-1 h-4 w-4 shrink-0 rounded border-input accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <label htmlFor="terms">
+            Li e concordo com a{" "}
+            <Link href="/politica-de-privacidade" className="font-medium text-primary underline underline-offset-4">
+              Política de Privacidade
+            </Link>{" "}
+            e os{" "}
+            <Link href="/termos-de-uso" className="font-medium text-primary underline underline-offset-4">
+              Termos de Uso
+            </Link>
+            .
+          </label>
+        </div>
+
         <Button type="submit" className="h-12 w-full text-base" disabled={loading}>
           {loading ? "Criando conta..." : "Criar conta"}
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Ja tem uma conta? </span>
+          <span className="text-muted-foreground">Já tem uma conta? </span>
           <Link
             href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
             className="font-medium text-primary underline underline-offset-4"
