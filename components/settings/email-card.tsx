@@ -36,12 +36,12 @@ export function EmailCard() {
         <CardDescription>E-mail atual: {session?.user?.email}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="space-y-3">
-          <div>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
             <Label htmlFor="newEmail">Novo e-mail</Label>
             <Input id="newEmail" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="currentPassword">Senha atual</Label>
             <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
           </div>
