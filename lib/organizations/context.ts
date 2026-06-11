@@ -99,8 +99,43 @@ export async function assertOrganizationSchemaReady() {
   }
 }
 
-export async function findActiveOrganizationForUser(userId: number): Promise<ActiveOrganization | null> {
+// Resolves the active organization for a user. When `preferredOrganizationId`
+// is provided AND the user is an active member of it, that organization wins —
+// the role is always read fresh from the DB for that specific membership. This
+// is what lets a multi-org user stay on the org their session points to (e.g.
+// the one they were invited to) instead of always falling back to their oldest
+// membership. Without a valid preference, falls back to the oldest membership.
+export async function findActiveOrganizationForUser(
+  userId: number,
+  preferredOrganizationId?: number | null,
+): Promise<ActiveOrganization | null> {
   const sql = getDb()
+
+  if (preferredOrganizationId && Number.isSafeInteger(preferredOrganizationId)) {
+    const preferred = (await sql`
+      SELECT
+        organizations.id,
+        organizations.name,
+        organization_members.role
+      FROM organization_members
+      INNER JOIN organizations ON organizations.id = organization_members.organization_id
+      WHERE organization_members.user_id = ${userId}
+        AND organization_members.organization_id = ${preferredOrganizationId}
+        AND organization_members.active = TRUE
+      LIMIT 1
+    `) as Array<{ id: number; name: string; role: string }>
+
+    const preferredOrganization = preferred[0]
+    if (preferredOrganization) {
+      return {
+        id: Number(preferredOrganization.id),
+        name: preferredOrganization.name,
+        role: preferredOrganization.role,
+      }
+    }
+    // Falls through: the session pointed to an org the user no longer belongs to.
+  }
+
   const organizations = (await sql`
     SELECT
       organizations.id,
@@ -137,14 +172,16 @@ export async function requireActiveOrganization(session: Session | null): Promis
     return { ok: false, response: NextResponse.json({ error: "Não autorizado" }, { status: 401 }) }
   }
 
+  // Respect the org the session points to (validated against active memberships),
+  // re-reading the current role from the DB. Falls back to the user's oldest
+  // membership when the session has no org or points to one they've left.
   const sessionOrganizationId = validatePositiveInteger(session.user.organizationId, "Organização")
-  const organization = await findActiveOrganizationForUser(userId.value)
+  const organization = await findActiveOrganizationForUser(
+    userId.value,
+    sessionOrganizationId.valid ? sessionOrganizationId.value : null,
+  )
 
   if (!organization) {
-    return { ok: false, response: organizationRequiredResponse() }
-  }
-
-  if (sessionOrganizationId.valid && organization.id !== sessionOrganizationId.value) {
     return { ok: false, response: organizationRequiredResponse() }
   }
 
