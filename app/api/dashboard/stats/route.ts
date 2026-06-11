@@ -47,8 +47,15 @@ export async function GET() {
     const sixMonthsAgo = new Date()
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
-    const [activeTotalsResult, totalRegisteredResult, expiringLotsResult, categoryRows, statusRows, monthlyRows] =
-      await Promise.all([
+    const [
+      activeTotalsResult,
+      soldTotalsResult,
+      totalRegisteredResult,
+      expiringLotsResult,
+      categoryRows,
+      statusRows,
+      monthlyRows,
+    ] = await Promise.all([
         sql`
           SELECT
             COUNT(*) as total_lots,
@@ -58,6 +65,16 @@ export async function GET() {
           FROM lots
           WHERE organization_id = ${organizationId}
             AND status = ANY(${activeStatuses})
+        `,
+        sql`
+          SELECT
+            COUNT(*) as sold_lots,
+            COALESCE(SUM(quantity), 0) as sold_kg,
+            COALESCE(SUM(quantity * cost_price), 0) as sold_cost,
+            COALESCE(SUM(quantity * sale_price), 0) as sold_revenue
+          FROM lots
+          WHERE organization_id = ${organizationId}
+            AND status = 'Vendido'
         `,
         sql`
           SELECT COUNT(*) as count
@@ -110,6 +127,13 @@ export async function GET() {
     const profitMargin = totalSaleValue - totalCost
     const expiringLots = toInteger(expiringLotsResult[0]?.count)
 
+    const soldTotals = soldTotalsResult[0] ?? {}
+    const soldLots = toInteger(soldTotals.sold_lots)
+    const soldKg = toNumber(soldTotals.sold_kg)
+    const soldCost = toNumber(soldTotals.sold_cost)
+    const soldRevenue = toNumber(soldTotals.sold_revenue)
+    const soldProfit = soldRevenue - soldCost
+
     const categoryBreakdown = categoryRows.map((row) => ({
       category: String(row.category || "Sem categoria"),
       quantity: toNumber(row.quantity),
@@ -142,6 +166,11 @@ export async function GET() {
             totalCost: roundCurrency(totalCost),
             totalSaleValue: roundCurrency(totalSaleValue),
             profitMargin: roundCurrency(profitMargin),
+            soldLots,
+            soldKg: roundCurrency(soldKg),
+            soldCost: roundCurrency(soldCost),
+            soldRevenue: roundCurrency(soldRevenue),
+            soldProfit: roundCurrency(soldProfit),
           }
         : {}),
       expiringLots,

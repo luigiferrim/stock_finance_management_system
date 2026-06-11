@@ -53,7 +53,7 @@ export default function FinanceiroPage() {
         }
 
         const data: Lot[] = await response.json()
-        setLots(data.filter((lot) => activeStatuses.has(lot.status)))
+        setLots(data)
       } catch (loadError) {
         setError(loadError instanceof Error ? loadError.message : "Erro ao carregar os dados financeiros.")
       } finally {
@@ -64,12 +64,22 @@ export default function FinanceiroPage() {
     loadLots()
   }, [])
 
-  const totalCost = lots.reduce((total, lot) => total + lot.quantity * lot.costPrice, 0)
-  const potentialRevenue = lots.reduce((total, lot) => total + lot.quantity * lot.salePrice, 0)
+  const activeLots = lots.filter((lot) => activeStatuses.has(lot.status))
+  const soldLots = lots.filter((lot) => lot.status === "Vendido")
+
+  // Realizado: dinheiro que de fato entrou com os lotes já vendidos.
+  const realizedRevenue = soldLots.reduce((total, lot) => total + lot.quantity * lot.salePrice, 0)
+  const realizedCost = soldLots.reduce((total, lot) => total + lot.quantity * lot.costPrice, 0)
+  const realizedProfit = realizedRevenue - realizedCost
+  const realizedMargin = realizedRevenue > 0 ? (realizedProfit / realizedRevenue) * 100 : 0
+
+  // Potencial: projeção do estoque que ainda não foi vendido.
+  const totalCost = activeLots.reduce((total, lot) => total + lot.quantity * lot.costPrice, 0)
+  const potentialRevenue = activeLots.reduce((total, lot) => total + lot.quantity * lot.salePrice, 0)
   const estimatedProfit = potentialRevenue - totalCost
   const profitMargin = potentialRevenue > 0 ? (estimatedProfit / potentialRevenue) * 100 : 0
 
-  const categoryTotals = lots.reduce<Record<string, number>>((totals, lot) => {
+  const categoryTotals = activeLots.reduce<Record<string, number>>((totals, lot) => {
     totals[lot.category] = (totals[lot.category] ?? 0) + lot.quantity * lot.salePrice
     return totals
   }, {})
@@ -80,7 +90,7 @@ export default function FinanceiroPage() {
     fill: chartColors[index % chartColors.length],
   }))
 
-  const topLots = [...lots]
+  const topLots = [...activeLots]
     .sort((first, second) => second.quantity * second.salePrice - first.quantity * first.salePrice)
     .slice(0, 5)
 
@@ -108,34 +118,77 @@ export default function FinanceiroPage() {
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Análise Financeira</h1>
-        <p className="text-sm text-muted-foreground">Acompanhe custos, receita potencial e rentabilidade dos lotes ativos.</p>
+        <p className="text-sm text-muted-foreground">
+          Realizado é o que já entrou com lotes vendidos. Potencial é a projeção do estoque ativo.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">Custo Total</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(totalCost)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">Receita Potencial</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(potentialRevenue)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">Lucro Estimado</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(estimatedProfit)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">Margem de Lucro</p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">{formatPercent(profitMargin)}</p>
-          </CardContent>
-        </Card>
+      {/* Realizado */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Realizado · {soldLots.length} lote(s) vendido(s)
+        </p>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Receita Realizada</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(realizedRevenue)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Custo dos Vendidos</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(realizedCost)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Lucro Realizado</p>
+              <p className={`mt-2 text-2xl font-semibold ${realizedProfit >= 0 ? "text-[#5a7a44]" : "text-destructive"}`}>
+                {formatCurrency(realizedProfit)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Margem Realizada</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatPercent(realizedMargin)}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Potencial */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Potencial · estoque ativo
+        </p>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Custo Total</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(totalCost)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Receita Potencial</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(potentialRevenue)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Lucro Projetado</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatCurrency(estimatedProfit)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">Margem de Lucro</p>
+              <p className="mt-2 text-2xl font-semibold text-foreground">{formatPercent(profitMargin)}</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
@@ -219,7 +272,7 @@ export default function FinanceiroPage() {
                 </tr>
               </thead>
               <tbody>
-                {lots.map((lot) => (
+                {activeLots.map((lot) => (
                   <tr key={lot.id} className="border-b last:border-b-0">
                     <td className="py-3 font-medium text-foreground">{lot.name}</td>
                     <td className="py-3">{lot.category}</td>

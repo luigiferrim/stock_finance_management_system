@@ -28,6 +28,11 @@ interface Stats {
   totalCost: number
   totalSaleValue: number
   profitMargin: number
+  soldLots: number
+  soldKg: number
+  soldCost: number
+  soldRevenue: number
+  soldProfit: number
   expiringLots: number
   categoryBreakdown: { category: string; quantity: number }[]
   statusBreakdown: { status: string; count: number; percent: number }[]
@@ -158,40 +163,33 @@ export default function DashboardPage() {
         <NewLotModal onSuccess={fetchData} />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="Lotes ativos"
-          value={String(stats?.totalLots ?? 0)}
-          sub="Encomendado, Chegou, Em Estoque e Embalado"
-          icon={<Package className="w-5 h-5 text-[#795548]" />}
-          iconBg="bg-[#795548]/10"
-        />
-        <KpiCard
-          label="Volume total"
-          value={`${(stats?.totalKg ?? 0).toLocaleString("pt-BR")} kg`}
-          sub="Somatório de lotes ativos"
-          icon={<Layers className="w-5 h-5 text-[#795548]" />}
-          iconBg="bg-[#795548]/10"
-        />
-        <KpiCard
-          label="Envelhecidos"
-          value={String(stats?.expiringLots ?? 0)}
-          sub="Torra há mais de 60 dias"
-          icon={<AlertTriangle className="w-5 h-5 text-amber-600" />}
-          iconBg="bg-amber-500/10"
-          valueClassName={(stats?.expiringLots ?? 0) > 0 ? "text-amber-600" : undefined}
-        />
-        <RoleGate action="financials:view">
+      {/* Operação */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Operação</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KpiCard
-            label="Margem projetada"
-            value={`${profitMarginPct}%`}
-            sub="Sobre receita potencial"
-            icon={<TrendingUp className="w-5 h-5 text-[#5a7a44]" />}
-            iconBg="bg-[#5a7a44]/10"
-            valueClassName="text-[#5a7a44]"
+            label="Lotes ativos"
+            value={String(stats?.totalLots ?? 0)}
+            sub="Encomendado, Chegou, Em Estoque e Embalado"
+            icon={<Package className="w-5 h-5 text-[#795548]" />}
+            iconBg="bg-[#795548]/10"
           />
-        </RoleGate>
+          <KpiCard
+            label="Volume total"
+            value={`${(stats?.totalKg ?? 0).toLocaleString("pt-BR")} kg`}
+            sub="Somatório de lotes ativos"
+            icon={<Layers className="w-5 h-5 text-[#795548]" />}
+            iconBg="bg-[#795548]/10"
+          />
+          <KpiCard
+            label="Envelhecidos"
+            value={String(stats?.expiringLots ?? 0)}
+            sub="Torra há mais de 60 dias"
+            icon={<AlertTriangle className="w-5 h-5 text-amber-600" />}
+            iconBg="bg-amber-500/10"
+            valueClassName={(stats?.expiringLots ?? 0) > 0 ? "text-amber-600" : undefined}
+          />
+        </div>
       </div>
 
       {/* Charts */}
@@ -328,30 +326,84 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Financial summary */}
+      {/* Financeiro */}
       <RoleGate action="financials:view">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Resumo Financeiro</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <KpiCard
-              label="Valor total investido"
-              value={formatCurrency(stats?.totalCost ?? 0)}
-              icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
-              iconBg="bg-[#795548]/10"
-            />
-            <KpiCard
-              label="Receita total potencial"
-              value={formatCurrency(stats?.totalSaleValue ?? 0)}
-              icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
-              iconBg="bg-[#795548]/10"
-            />
-            <KpiCard
-              label="Lucro líquido projetado"
-              value={formatCurrency(stats?.profitMargin ?? 0)}
-              icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
-              iconBg="bg-[#5a7a44]/10"
-              valueClassName={(stats?.profitMargin ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
-            />
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Financeiro</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Realizado é o que já entrou com lotes vendidos. Potencial é a projeção do estoque ativo.
+            </p>
+          </div>
+
+          {/* Realizado */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Realizado · lotes vendidos
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <KpiCard
+                label="Receita realizada"
+                value={formatCurrency(stats?.soldRevenue ?? 0)}
+                sub="Total já vendido"
+                icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
+                iconBg="bg-[#5a7a44]/10"
+              />
+              <KpiCard
+                label="Custo dos vendidos"
+                value={formatCurrency(stats?.soldCost ?? 0)}
+                sub="Investido nos lotes vendidos"
+                icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+                iconBg="bg-[#795548]/10"
+              />
+              <KpiCard
+                label="Lucro realizado"
+                value={formatCurrency(stats?.soldProfit ?? 0)}
+                sub="Receita menos custo dos vendidos"
+                icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
+                iconBg="bg-[#5a7a44]/10"
+                valueClassName={(stats?.soldProfit ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
+              />
+            </div>
+          </div>
+
+          {/* Potencial */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+              Potencial · estoque ativo
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <KpiCard
+                label="Valor investido"
+                value={formatCurrency(stats?.totalCost ?? 0)}
+                sub="Custo dos lotes ativos"
+                icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+                iconBg="bg-[#795548]/10"
+              />
+              <KpiCard
+                label="Receita potencial"
+                value={formatCurrency(stats?.totalSaleValue ?? 0)}
+                sub="Se vender todo o estoque"
+                icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+                iconBg="bg-[#795548]/10"
+              />
+              <KpiCard
+                label="Lucro projetado"
+                value={formatCurrency(stats?.profitMargin ?? 0)}
+                sub="Potencial, ainda não realizado"
+                icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
+                iconBg="bg-[#5a7a44]/10"
+                valueClassName={(stats?.profitMargin ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
+              />
+              <KpiCard
+                label="Margem projetada"
+                value={`${profitMarginPct}%`}
+                sub="Sobre receita potencial"
+                icon={<TrendingUp className="w-5 h-5 text-[#5a7a44]" />}
+                iconBg="bg-[#5a7a44]/10"
+                valueClassName="text-[#5a7a44]"
+              />
+            </div>
           </div>
         </div>
       </RoleGate>
