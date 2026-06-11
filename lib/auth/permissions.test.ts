@@ -88,6 +88,11 @@ describe("parseRole() / isKnownRole()", () => {
     expect(parseRole("Owner")).toBe("Owner")
     expect(isKnownRole("Finance")).toBe(true)
   })
+  it("normalizes role casing and surrounding spaces", () => {
+    expect(parseRole("viewer")).toBe("Viewer")
+    expect(parseRole(" finance ")).toBe("Finance")
+    expect(can("stock", "stock:view")).toBe(true)
+  })
   it("rejects unknown", () => {
     expect(parseRole("Member")).toBeNull()
     expect(parseRole(null)).toBeNull()

@@ -42,16 +42,20 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
 }
 
 export function isKnownRole(value: unknown): value is Role {
-  return typeof value === "string" && (ROLES as readonly string[]).includes(value)
+  return parseRole(value) !== null
 }
 
 export function parseRole(value: unknown): Role | null {
-  return isKnownRole(value) ? value : null
+  if (typeof value !== "string") return null
+
+  const normalizedRole = value.trim().toLowerCase()
+  return ROLES.find((role) => role.toLowerCase() === normalizedRole) ?? null
 }
 
 export function can(role: Role | string | null | undefined, action: Action): boolean {
-  if (!isKnownRole(role)) return false
-  return ROLE_PERMISSIONS[role].has(action)
+  const parsedRole = parseRole(role)
+  if (!parsedRole) return false
+  return ROLE_PERMISSIONS[parsedRole].has(action)
 }
 
 // Target-dependent rules (cannot live in the flat matrix).

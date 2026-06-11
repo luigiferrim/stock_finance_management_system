@@ -31,6 +31,7 @@ export default function EstoquePage() {
   const [lots, setLots] = useState<Lot[]>([])
   const [filteredLots, setFilteredLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [editingLot, setEditingLot] = useState<Lot | null>(null)
   const isMobile = useIsMobile()
@@ -50,12 +51,25 @@ export default function EstoquePage() {
 
   const fetchLots = async () => {
     try {
+      setError("")
       const response = await fetch("/api/lots", { cache: "no-store" })
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Erro ao buscar lotes")
+      }
+
+      if (!Array.isArray(data)) {
+        throw new Error("Resposta inesperada ao buscar lotes")
+      }
+
       setLots(data)
       setFilteredLots(data)
     } catch (error) {
       console.error("Erro ao buscar lotes:", error)
+      setLots([])
+      setFilteredLots([])
+      setError(error instanceof Error ? error.message : "Erro ao buscar lotes")
     } finally {
       setLoading(false)
     }
@@ -150,6 +164,12 @@ export default function EstoquePage() {
           className="pl-10 bg-white"
         />
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Tabela */}
       <div className="bg-white rounded-lg border border-border overflow-x-auto">
