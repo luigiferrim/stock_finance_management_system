@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ACTIVE_LOT_STATUSES } from "@/lib/stock/constants"
+import { ACTIVE_LOT_STATUSES, SOLD_LOT_STATUS } from "@/lib/stock/constants"
 import { PermissionDenied } from "@/components/auth/role-gate"
 import { usePermission } from "@/lib/auth/use-permissions"
 
@@ -65,7 +65,7 @@ export default function FinanceiroPage() {
   }, [])
 
   const activeLots = lots.filter((lot) => activeStatuses.has(lot.status))
-  const soldLots = lots.filter((lot) => lot.status === "Vendido")
+  const soldLots = lots.filter((lot) => lot.status === SOLD_LOT_STATUS)
 
   // Realizado: dinheiro que de fato entrou com os lotes já vendidos.
   const realizedRevenue = soldLots.reduce((total, lot) => total + lot.quantity * lot.salePrice, 0)

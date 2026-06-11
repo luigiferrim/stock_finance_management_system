@@ -5,10 +5,19 @@ import { NewLotModal } from "@/components/new-lot-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, AlertTriangle, Pencil, Trash2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 import { notifyStockChanged } from "@/lib/stock/client-events"
-import { LOT_STATUSES } from "@/lib/stock/constants"
+import { LOT_STATUS_GROUPS } from "@/lib/stock/constants"
 import { RoleGate } from "@/components/auth/role-gate"
 
 interface Lot {
@@ -147,8 +156,14 @@ export default function EstoquePage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Controle de Estoque</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Controle de Estoque</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Lotes <strong>em processo</strong> contam no estoque e na análise potencial.{" "}
+            <strong>Vendido</strong> marca o lote como vendido integralmente (100%) e passa para o realizado.
+          </p>
+        </div>
         <RoleGate action="lot:create">
           <NewLotModal onSuccess={handleSuccess} editLot={editingLot} />
         </RoleGate>
@@ -217,10 +232,16 @@ export default function EstoquePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {LOT_STATUSES.map((status) => (
-                            <SelectItem key={status} value={status}>
-                              {status}
-                            </SelectItem>
+                          {LOT_STATUS_GROUPS.map((group, groupIndex) => (
+                            <SelectGroup key={group.label}>
+                              {groupIndex > 0 && <SelectSeparator />}
+                              <SelectLabel title={group.description}>{group.label}</SelectLabel>
+                              {group.statuses.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
