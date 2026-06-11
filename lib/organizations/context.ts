@@ -1,6 +1,7 @@
 import type { Session } from "next-auth"
 import { NextResponse } from "next/server"
 
+import { type Action, type Role, can, parseRole } from "@/lib/auth/permissions"
 import { getDb } from "@/lib/db"
 import { validatePositiveInteger } from "@/lib/security/validation"
 
@@ -148,4 +149,41 @@ export async function requireActiveOrganization(session: Session | null): Promis
   }
 
   return { ok: true, userId: userId.value, organization }
+}
+
+export type PermissionContext =
+  | { ok: true; userId: number; organization: ActiveOrganization; role: Role }
+  | { ok: false; response: NextResponse }
+
+export function permissionDeniedResponse() {
+  return NextResponse.json({ error: "Você não tem permissão para esta ação" }, { status: 403 })
+}
+
+// Accepts a single action or an array (array = "any of").
+export async function requirePermission(
+  session: Session | null,
+  action: Action | Action[],
+): Promise<PermissionContext> {
+  const organizationContext = await requireActiveOrganization(session)
+  if (!organizationContext.ok) {
+    return organizationContext
+  }
+
+  const role = parseRole(organizationContext.organization.role)
+  if (!role) {
+    return { ok: false, response: permissionDeniedResponse() }
+  }
+
+  const actions = Array.isArray(action) ? action : [action]
+  const allowed = actions.some((candidate) => can(role, candidate))
+  if (!allowed) {
+    return { ok: false, response: permissionDeniedResponse() }
+  }
+
+  return {
+    ok: true,
+    userId: organizationContext.userId,
+    organization: organizationContext.organization,
+    role,
+  }
 }

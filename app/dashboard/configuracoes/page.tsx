@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { EmailCard } from "@/components/settings/email-card"
+import { MembersSection } from "@/components/settings/members-section"
+import { useRole } from "@/lib/auth/use-permissions"
 import { validateName } from "@/lib/auth/validation"
 
 interface FormMessage {
@@ -36,6 +39,7 @@ function validatePassword(password: string) {
 
 export default function ConfiguracoesPage() {
   const { data: session, update } = useSession()
+  const role = useRole()
   const [profileName, setProfileName] = useState("")
   const [profileMessage, setProfileMessage] = useState<FormMessage | null>(null)
   const [profileSubmitting, setProfileSubmitting] = useState(false)
@@ -148,7 +152,14 @@ export default function ConfiguracoesPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+          {role && (
+            <span className="inline-flex items-center rounded-full bg-[#ece7df] px-2.5 py-0.5 text-xs font-medium text-[#795548]">
+              Seu papel: {role}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">Gerencie os dados da conta e a segurança do acesso.</p>
       </div>
 
@@ -242,6 +253,10 @@ export default function ConfiguracoesPage() {
             </form>
           </CardContent>
         </Card>
+
+        <EmailCard />
+
+        <MembersSection />
       </div>
     </div>
   )

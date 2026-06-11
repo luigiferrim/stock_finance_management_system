@@ -125,6 +125,15 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      const updatedEmail = session?.user?.email
+      if (trigger === "update" && typeof updatedEmail === "string") {
+        const normalizedEmail = normalizeEmail(updatedEmail)
+
+        if (validateEmail(normalizedEmail)) {
+          token.email = normalizedEmail
+        }
+      }
+
       if (trigger === "update") {
         const updatePayload = session as
           | {

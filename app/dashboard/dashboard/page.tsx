@@ -18,6 +18,7 @@ import {
 } from "recharts"
 import { Package, AlertTriangle, TrendingUp, DollarSign, Layers } from "lucide-react"
 import { NewLotModal } from "@/components/new-lot-modal"
+import { RoleGate } from "@/components/auth/role-gate"
 import { STOCK_DATA_CHANGED_EVENT, STOCK_DATA_CHANGED_STORAGE_KEY } from "@/lib/stock/client-events"
 
 interface Stats {
@@ -181,14 +182,16 @@ export default function DashboardPage() {
           iconBg="bg-amber-500/10"
           valueClassName={(stats?.expiringLots ?? 0) > 0 ? "text-amber-600" : undefined}
         />
-        <KpiCard
-          label="Margem projetada"
-          value={`${profitMarginPct}%`}
-          sub="Sobre receita potencial"
-          icon={<TrendingUp className="w-5 h-5 text-[#5a7a44]" />}
-          iconBg="bg-[#5a7a44]/10"
-          valueClassName="text-[#5a7a44]"
-        />
+        <RoleGate action="financials:view">
+          <KpiCard
+            label="Margem projetada"
+            value={`${profitMarginPct}%`}
+            sub="Sobre receita potencial"
+            icon={<TrendingUp className="w-5 h-5 text-[#5a7a44]" />}
+            iconBg="bg-[#5a7a44]/10"
+            valueClassName="text-[#5a7a44]"
+          />
+        </RoleGate>
       </div>
 
       {/* Charts */}
@@ -326,30 +329,32 @@ export default function DashboardPage() {
       </div>
 
       {/* Financial summary */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Resumo Financeiro</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <KpiCard
-            label="Valor total investido"
-            value={formatCurrency(stats?.totalCost ?? 0)}
-            icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
-            iconBg="bg-[#795548]/10"
-          />
-          <KpiCard
-            label="Receita total potencial"
-            value={formatCurrency(stats?.totalSaleValue ?? 0)}
-            icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
-            iconBg="bg-[#795548]/10"
-          />
-          <KpiCard
-            label="Lucro líquido projetado"
-            value={formatCurrency(stats?.profitMargin ?? 0)}
-            icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
-            iconBg="bg-[#5a7a44]/10"
-            valueClassName={(stats?.profitMargin ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
-          />
+      <RoleGate action="financials:view">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Resumo Financeiro</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <KpiCard
+              label="Valor total investido"
+              value={formatCurrency(stats?.totalCost ?? 0)}
+              icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+              iconBg="bg-[#795548]/10"
+            />
+            <KpiCard
+              label="Receita total potencial"
+              value={formatCurrency(stats?.totalSaleValue ?? 0)}
+              icon={<DollarSign className="w-5 h-5 text-[#795548]" />}
+              iconBg="bg-[#795548]/10"
+            />
+            <KpiCard
+              label="Lucro líquido projetado"
+              value={formatCurrency(stats?.profitMargin ?? 0)}
+              icon={<DollarSign className="w-5 h-5 text-[#5a7a44]" />}
+              iconBg="bg-[#5a7a44]/10"
+              valueClassName={(stats?.profitMargin ?? 0) >= 0 ? "text-[#5a7a44]" : "text-destructive"}
+            />
+          </div>
         </div>
-      </div>
+      </RoleGate>
     </div>
   )
 }

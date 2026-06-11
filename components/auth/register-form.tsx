@@ -3,17 +3,19 @@
 import type React from "react"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Building2, Eye, EyeOff, Lock, Mail, User } from "lucide-react"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function RegisterForm() {
+function RegisterFormInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl")
   const [name, setName] = useState("")
   const [organizationName, setOrganizationName] = useState("")
   const [email, setEmail] = useState("")
@@ -58,7 +60,10 @@ export function RegisterForm() {
         return
       }
 
-      router.push("/login?registered=true")
+      const loginUrl = callbackUrl
+        ? `/login?registered=true&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        : "/login?registered=true"
+      router.push(loginUrl)
     } catch {
       setError("Erro ao registrar. Tente novamente.")
       setLoading(false)
@@ -178,12 +183,23 @@ export function RegisterForm() {
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Já tem uma conta? </span>
-          <Link href="/login" className="font-medium text-primary underline underline-offset-4">
+          <span className="text-muted-foreground">Ja tem uma conta? </span>
+          <Link
+            href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
+            className="font-medium text-primary underline underline-offset-4"
+          >
             Fazer login
           </Link>
         </div>
       </form>
     </AuthShell>
+  )
+}
+
+export function RegisterForm() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterFormInner />
+    </Suspense>
   )
 }

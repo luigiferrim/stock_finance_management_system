@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
-import { requireActiveOrganization } from "@/lib/organizations/context"
+import { requirePermission } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger } from "@/lib/security/validation"
 import { validateUpdateLotPayload } from "@/lib/stock/validation"
@@ -32,11 +32,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const organizationContext = await requireActiveOrganization(session)
-    if (!organizationContext.ok) {
-      return organizationContext.response
-    }
-
     const body = await parseJsonBody(request)
     if (!body.ok) {
       return body.response
@@ -45,6 +40,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const lotPayload = validateUpdateLotPayload(body.data)
     if (!lotPayload.valid) {
       return NextResponse.json({ error: lotPayload.error }, { status: 400 })
+    }
+
+    const isStatusOnlyChange = lotPayload.value.status != null
+    const organizationContext = await requirePermission(
+      session,
+      isStatusOnlyChange ? ["lot:change-status", "lot:edit"] : "lot:edit",
+    )
+    if (!organizationContext.ok) {
+      return organizationContext.response
     }
 
     const { name, quantity, costPrice, salePrice, supplier, category, variety, process, roastDate, status } =

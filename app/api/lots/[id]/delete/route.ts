@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { sql } from "@/lib/db"
-import { requireActiveOrganization } from "@/lib/organizations/context"
+import { requirePermission } from "@/lib/organizations/context"
 import { requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger } from "@/lib/security/validation"
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const organizationContext = await requireActiveOrganization(session)
+    const organizationContext = await requirePermission(session, "lot:delete")
     if (!organizationContext.ok) {
       return organizationContext.response
     }

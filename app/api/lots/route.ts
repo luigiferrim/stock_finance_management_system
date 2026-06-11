@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/options"
 import { getDb } from "@/lib/db"
-import { requireActiveOrganization } from "@/lib/organizations/context"
+import { requirePermission } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validateCreateLotPayload } from "@/lib/stock/validation"
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const organizationContext = await requireActiveOrganization(session)
+    const organizationContext = await requirePermission(session, "stock:view")
     if (!organizationContext.ok) {
       return organizationContext.response
     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       return originError
     }
 
-    const organizationContext = await requireActiveOrganization(session)
+    const organizationContext = await requirePermission(session, "lot:create")
     if (!organizationContext.ok) {
       return organizationContext.response
     }
