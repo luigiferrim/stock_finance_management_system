@@ -69,7 +69,6 @@ export async function GET() {
         sql`
           SELECT
             COUNT(*) as sold_lots,
-            COALESCE(SUM(quantity), 0) as sold_kg,
             COALESCE(SUM(quantity * cost_price), 0) as sold_cost,
             COALESCE(SUM(quantity * sale_price), 0) as sold_revenue
           FROM lots
@@ -129,7 +128,6 @@ export async function GET() {
 
     const soldTotals = soldTotalsResult[0] ?? {}
     const soldLots = toInteger(soldTotals.sold_lots)
-    const soldKg = toNumber(soldTotals.sold_kg)
     const soldCost = toNumber(soldTotals.sold_cost)
     const soldRevenue = toNumber(soldTotals.sold_revenue)
     const soldProfit = soldRevenue - soldCost
@@ -167,7 +165,6 @@ export async function GET() {
             totalSaleValue: roundCurrency(totalSaleValue),
             profitMargin: roundCurrency(profitMargin),
             soldLots,
-            soldKg: roundCurrency(soldKg),
             soldCost: roundCurrency(soldCost),
             soldRevenue: roundCurrency(soldRevenue),
             soldProfit: roundCurrency(soldProfit),

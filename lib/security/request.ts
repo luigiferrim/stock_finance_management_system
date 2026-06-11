@@ -31,17 +31,16 @@ export function resolvePublicBaseUrl(requestUrl: string): string {
     return stripTrailingSlash(configured)
   }
 
-  const origin = new URL(requestUrl).origin
-  const { hostname } = new URL(origin)
-  if (isEphemeralVercelHost(hostname)) {
+  const parsed = new URL(requestUrl)
+  if (isEphemeralVercelHost(parsed.hostname)) {
     console.warn(
-      `[resolvePublicBaseUrl] Gerando link público a partir de um domínio de preview da Vercel (${hostname}). ` +
+      `[resolvePublicBaseUrl] Gerando link público a partir de um domínio de preview da Vercel (${parsed.hostname}). ` +
         "Esse link provavelmente cairá na tela de autenticação da Vercel. " +
         "Defina NEXT_PUBLIC_SITE_URL com o domínio de produção.",
     )
   }
 
-  return stripTrailingSlash(origin)
+  return stripTrailingSlash(parsed.origin)
 }
 
 export function getClientIp(headers: HeaderBag): string {
