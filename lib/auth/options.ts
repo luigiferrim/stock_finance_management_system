@@ -151,7 +151,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      if (typeof token.id === "string" && token.organizationId === undefined) {
+      if (typeof token.id === "string" && typeof token.organizationId !== "string") {
         const userId = Number(token.id)
 
         if (Number.isSafeInteger(userId) && userId > 0) {
