@@ -151,7 +151,11 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      if (typeof token.id === "string" && token.organizationId === undefined) {
+      // Re-resolve the active organization from the database whenever the token
+      // does not yet carry one. This covers users who logged in before joining an
+      // org (token.organizationId === null) and only later accepted an invite —
+      // without this, the stale null role would persist and they would see nothing.
+      if (typeof token.id === "string" && typeof token.organizationId !== "string") {
         const userId = Number(token.id)
 
         if (Number.isSafeInteger(userId) && userId > 0) {
