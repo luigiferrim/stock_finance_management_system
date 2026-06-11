@@ -8,6 +8,7 @@ import { normalizeEmail, validateEmail } from "@/lib/auth/validation"
 import { getDb } from "@/lib/db"
 import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { resolvePublicBaseUrl } from "@/lib/security/request"
 
 const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
         ${`Solicitou troca de e-mail para ${newEmail}`}, NOW())
     `
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+    const baseUrl = resolvePublicBaseUrl(request.url)
     const confirmUrl = `${baseUrl}/conta/confirmar-email?token=${rawToken}`
 
     return NextResponse.json({ message: "Confirmação gerada", confirmUrl, pendingEmail: newEmail })

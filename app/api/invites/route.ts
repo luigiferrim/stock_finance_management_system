@@ -10,6 +10,7 @@ import { requirePermission } from "@/lib/organizations/context"
 import { createInvite, findPendingInviteByEmail, listPendingInvites } from "@/lib/organizations/invites-repository"
 import { findActiveMembershipByEmail } from "@/lib/organizations/members-repository"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { resolvePublicBaseUrl } from "@/lib/security/request"
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
         ${`Convite enviado para ${email} como ${role}`}, NOW())
     `
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+    const baseUrl = resolvePublicBaseUrl(request.url)
     const acceptUrl = `${baseUrl}/convite/aceitar?token=${rawToken}`
 
     return NextResponse.json(

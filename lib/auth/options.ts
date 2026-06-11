@@ -151,11 +151,18 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      if (typeof token.id === "string" && typeof token.organizationId !== "string") {
+      // Always re-resolve the active organization (and its current role) from the
+      // DB, preferring the org the token already points to. This keeps the role
+      // fresh: if an admin promotes/demotes the user, the change takes effect on
+      // the next request instead of being frozen in the token until re-login.
+      // It also fills in org/role on first issue when the token has none yet.
+      if (typeof token.id === "string") {
         const userId = Number(token.id)
 
         if (Number.isSafeInteger(userId) && userId > 0) {
-          const activeOrganization = await findActiveOrganizationForUser(userId)
+          const preferredOrganizationId =
+            typeof token.organizationId === "string" ? Number(token.organizationId) : null
+          const activeOrganization = await findActiveOrganizationForUser(userId, preferredOrganizationId)
 
           token.organizationId = activeOrganization?.id.toString() ?? null
           token.organizationName = activeOrganization?.name ?? null

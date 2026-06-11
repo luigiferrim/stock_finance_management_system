@@ -14,10 +14,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 import { notifyStockChanged } from "@/lib/stock/client-events"
-import { DEFAULT_LOT_STATUS, LOT_CATEGORIES, LOT_STATUSES } from "@/lib/stock/constants"
+import { DEFAULT_LOT_STATUS, LOT_CATEGORIES, LOT_STATUS_GROUPS } from "@/lib/stock/constants"
 
 interface NewLotModalProps {
   onSuccess: () => void
@@ -326,10 +335,16 @@ export function NewLotModal({ onSuccess, editLot }: NewLotModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LOT_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
+                  {LOT_STATUS_GROUPS.map((group, groupIndex) => (
+                    <SelectGroup key={group.label}>
+                      {groupIndex > 0 && <SelectSeparator />}
+                      <SelectLabel title={group.description}>{group.label}</SelectLabel>
+                      {group.statuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
                 </SelectContent>
               </Select>

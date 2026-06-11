@@ -29,7 +29,6 @@ interface Stats {
   totalSaleValue: number
   profitMargin: number
   soldLots: number
-  soldKg: number
   soldCost: number
   soldRevenue: number
   soldProfit: number
