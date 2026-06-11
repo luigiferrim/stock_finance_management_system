@@ -6,6 +6,12 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password"
 import { validatePasswordPolicy } from "@/lib/auth/validation"
 import { requireActiveOrganization } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
+import { createRateLimiter } from "@/lib/security/rate-limit"
+
+const changePasswordRateLimiter = createRateLimiter({
+  maxAttempts: 5,
+  windowMs: 15 * 60 * 1000,
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,6 +40,22 @@ export async function POST(request: NextRequest) {
 
     if (typeof currentPassword !== "string" || typeof newPassword !== "string") {
       return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
+    }
+
+    const rateLimitResult = changePasswordRateLimiter.check(`change-password:${session.user.id}`)
+
+    if (!rateLimitResult.allowed) {
+      const retryAfter = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+
+      return NextResponse.json(
+        { error: "Muitas tentativas de troca de senha. Tente novamente mais tarde." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": retryAfter.toString(),
+          },
+        },
+      )
     }
 
     const passwordValidation = validatePasswordPolicy(newPassword)
