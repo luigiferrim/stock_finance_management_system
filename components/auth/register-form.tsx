@@ -167,11 +167,21 @@ function RegisterFormInner() {
           />
           <label htmlFor="terms">
             Li e concordo com a{" "}
-            <Link href="/politica-de-privacidade" className="font-medium text-primary underline underline-offset-4">
+            <Link
+              href="/politica-de-privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline underline-offset-4"
+            >
               Política de Privacidade
             </Link>{" "}
             e os{" "}
-            <Link href="/termos-de-uso" className="font-medium text-primary underline underline-offset-4">
+            <Link
+              href="/termos-de-uso"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary underline underline-offset-4"
+            >
               Termos de Uso
             </Link>
             .
