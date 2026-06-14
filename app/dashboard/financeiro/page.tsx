@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ACTIVE_LOT_STATUSES, SOLD_LOT_STATUS } from "@/lib/stock/constants"
 import { PermissionDenied } from "@/components/auth/role-gate"
 import { usePermission } from "@/lib/auth/use-permissions"
+import { Skeleton } from "@/components/ui/skeleton"
+import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
+import { TableSkeleton } from "@/components/skeletons/table-skeleton"
 
 interface Lot {
   id: number
@@ -104,8 +107,70 @@ export default function FinanceiroPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="text-sm text-muted-foreground">Carregando...</div>
+      <div
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+        className="p-4 md:p-6 lg:p-8 space-y-6"
+      >
+        <span className="sr-only">Carregando a análise financeira…</span>
+
+        {/* Header */}
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="h-4 w-full max-w-xl" />
+        </div>
+
+        {/* Realizado */}
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-48" />
+          <CardGridSkeleton count={4} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" />
+        </div>
+
+        {/* Potencial */}
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-40" />
+          <CardGridSkeleton count={4} className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" />
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+          <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-3 w-56 max-w-full" />
+            <div className="flex justify-center py-2">
+              <Skeleton className="size-[190px] rounded-full" />
+            </div>
+            <div className="space-y-2">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-3 w-48 max-w-full" />
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="flex items-center justify-between border-b pb-3 last:border-b-0 last:pb-0">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Análise por lote */}
+        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-3 w-64 max-w-full" />
+          <TableSkeleton columns={7} rows={5} />
+        </div>
       </div>
     )
   }

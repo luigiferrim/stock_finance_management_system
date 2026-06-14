@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { can } from "@/lib/auth/permissions"
 import { useRole } from "@/lib/auth/use-permissions"
 
@@ -50,6 +51,7 @@ export function PermissionRequestsSection() {
   const currentRole = useRole()
 
   const [requests, setRequests] = useState<PermissionRequest[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [actionError, setActionError] = useState("")
   const [processing, setProcessing] = useState<number | null>(null)
@@ -68,6 +70,8 @@ export function PermissionRequestsSection() {
       setError("")
     } catch {
       setError("Erro ao carregar as solicitações.")
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -77,6 +81,25 @@ export function PermissionRequestsSection() {
 
   if (!currentRole || !can(currentRole, "org:view-settings")) {
     return null
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Solicitações de Permissão</CardTitle>
+          <CardDescription>
+            Revise pedidos de elevação de papel feitos por membros da organização.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div role="status" aria-busy="true" aria-live="polite">
+            <span className="sr-only">Carregando as solicitações…</span>
+            <ListSkeleton rows={2} />
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   async function handleAction(requestId: number, action: "approve" | "reject") {

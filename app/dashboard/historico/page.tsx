@@ -8,6 +8,8 @@ import { AlertTriangle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 
 interface Log {
@@ -106,11 +108,53 @@ export default function HistoricoPage() {
           <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
           <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
         </div>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">Carregando...</p>
-          </CardContent>
-        </Card>
+
+        <div role="status" aria-busy="true" aria-live="polite" className="space-y-6">
+          <span className="sr-only">Carregando o histórico…</span>
+
+          {/* Filtros */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-3 w-72 max-w-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Eventos recentes */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3 w-80 max-w-full" />
+            </CardHeader>
+            <CardContent>
+              <ListSkeleton rows={4} className="space-y-4" rowClassName="p-4" />
+            </CardContent>
+          </Card>
+
+          {/* Resumo */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-3 w-64 max-w-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div key={index} className="rounded-lg border p-4 space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-7 w-12" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }

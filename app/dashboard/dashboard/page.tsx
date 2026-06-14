@@ -19,6 +19,7 @@ import {
 import { Package, AlertTriangle, TrendingUp, DollarSign, Layers } from "lucide-react"
 import { NewLotModal } from "@/components/new-lot-modal"
 import { RoleGate } from "@/components/auth/role-gate"
+import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton"
 import { STOCK_DATA_CHANGED_EVENT, STOCK_DATA_CHANGED_STORAGE_KEY } from "@/lib/stock/client-events"
 
 interface Stats {
@@ -140,11 +141,7 @@ export default function DashboardPage() {
       : null
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="text-muted-foreground text-sm">Carregando...</div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
