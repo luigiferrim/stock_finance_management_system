@@ -19,6 +19,8 @@ import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 import { notifyStockChanged } from "@/lib/stock/client-events"
 import { LOT_STATUS_GROUPS } from "@/lib/stock/constants"
 import { RoleGate } from "@/components/auth/role-gate"
+import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/skeletons/table-skeleton"
 
 interface Lot {
   id: string
@@ -147,8 +149,28 @@ export default function EstoquePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-muted-foreground">Carregando...</div>
+      <div
+        role="status"
+        aria-busy="true"
+        aria-live="polite"
+        className="p-4 md:p-6 lg:p-8 space-y-6"
+      >
+        <span className="sr-only">Carregando o estoque…</span>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-72 max-w-full" />
+            <Skeleton className="h-4 w-full max-w-2xl" />
+          </div>
+          <Skeleton className="h-9 w-36 shrink-0" />
+        </div>
+
+        {/* Search */}
+        <Skeleton className="h-12 w-full max-w-md" />
+
+        {/* Table */}
+        <TableSkeleton columns={8} rows={6} />
       </div>
     )
   }
