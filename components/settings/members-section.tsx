@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { ROLES, type Role, can, canAssignRole, canManageMember } from "@/lib/auth/permissions"
 import { useRole } from "@/lib/auth/use-permissions"
 
@@ -47,6 +48,7 @@ export function MembersSection() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [invites, setInvites] = useState<PendingInvite[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState<Role>("Viewer")
@@ -69,6 +71,8 @@ export function MembersSection() {
       setError("")
     } catch {
       setError("Erro ao carregar os membros.")
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -78,6 +82,23 @@ export function MembersSection() {
 
   if (!currentRole || !canManageMember(currentRole, "Viewer")) {
     return null
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Membros</CardTitle>
+          <CardDescription>Gerencie os papéis e o acesso da sua organização.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div role="status" aria-busy="true" aria-live="polite">
+            <span className="sr-only">Carregando os membros…</span>
+            <ListSkeleton rows={3} />
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   async function handleRoleChange(memberId: number, role: string) {
