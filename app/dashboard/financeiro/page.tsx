@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ACTIVE_LOT_STATUSES, SOLD_LOT_STATUS } from "@/lib/stock/constants"
 import { PermissionDenied } from "@/components/auth/role-gate"
 import { usePermission } from "@/lib/auth/use-permissions"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
 import { TableSkeleton } from "@/components/skeletons/table-skeleton"
@@ -44,28 +45,32 @@ export default function FinanceiroPage() {
   const canViewFinancials = usePermission("financials:view")
   const [lots, setLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+
+  const loadLots = useCallback(async () => {
+    setLoading(true)
+    setError(false)
+
+    try {
+      const response = await fetch("/api/lots", { cache: "no-store" })
+
+      if (!response.ok) {
+        throw new Error("Resposta não-ok ao carregar os lotes.")
+      }
+
+      const data: Lot[] = await response.json()
+      setLots(data)
+    } catch (loadError) {
+      console.error("Erro ao carregar os dados financeiros:", loadError)
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    async function loadLots() {
-      try {
-        const response = await fetch("/api/lots", { cache: "no-store" })
-
-        if (!response.ok) {
-          throw new Error("Não foi possível carregar os lotes.")
-        }
-
-        const data: Lot[] = await response.json()
-        setLots(data)
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Erro ao carregar os dados financeiros.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadLots()
-  }, [])
+    void loadLots()
+  }, [loadLots])
 
   const activeLots = lots.filter((lot) => activeStatuses.has(lot.status))
   const soldLots = lots.filter((lot) => lot.status === SOLD_LOT_STATUS)
@@ -176,7 +181,15 @@ export default function FinanceiroPage() {
   }
 
   if (error) {
-    return <div className="text-sm text-destructive">{error}</div>
+    return (
+      <div className="p-4 md:p-6 lg:p-8">
+        <ErrorState
+          title="Não foi possível carregar a análise financeira."
+          message="Houve um problema ao carregar seus dados. Tente novamente."
+          onRetry={loadLots}
+        />
+      </div>
+    )
   }
 
   return (
