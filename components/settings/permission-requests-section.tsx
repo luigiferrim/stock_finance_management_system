@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ErrorState } from "@/components/ui/error-state"
 import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { can } from "@/lib/auth/permissions"
 import { useRole } from "@/lib/auth/use-permissions"
@@ -52,7 +53,7 @@ export function PermissionRequestsSection() {
 
   const [requests, setRequests] = useState<PermissionRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(false)
   const [actionError, setActionError] = useState("")
   const [processing, setProcessing] = useState<number | null>(null)
 
@@ -62,20 +63,25 @@ export function PermissionRequestsSection() {
       const data = (await response.json()) as PermissionRequestsResponse
 
       if (!response.ok) {
-        setError(data.error ?? "Não foi possível carregar as solicitações.")
+        setError(true)
         return
       }
 
       setRequests(data.requests)
-      setError("")
+      setError(false)
     } catch {
-      setError("Erro ao carregar as solicitações.")
+      setError(true)
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    void load()
+  }, [load])
+
+  const retryLoad = useCallback(() => {
+    setLoading(true)
     void load()
   }, [load])
 
@@ -97,6 +103,27 @@ export function PermissionRequestsSection() {
             <span className="sr-only">Carregando as solicitações…</span>
             <ListSkeleton rows={2} />
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Solicitações de Permissão</CardTitle>
+          <CardDescription>
+            Revise pedidos de elevação de papel feitos por membros da organização.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ErrorState
+            variant="section"
+            title="Não foi possível carregar as solicitações."
+            message="Tente novamente."
+            onRetry={retryLoad}
+          />
         </CardContent>
       </Card>
     )
@@ -139,7 +166,6 @@ export function PermissionRequestsSection() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
 
         <div className="space-y-2">
