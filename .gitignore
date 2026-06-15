@@ -13,3 +13,7 @@ yarn-error.log*
 pnpm-debug.log*
 MIGRATION_PLAN.md
 .vercel
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
