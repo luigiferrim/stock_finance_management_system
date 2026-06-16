@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { NewLotModal } from "@/components/new-lot-modal"
+import { PageContainer } from "@/components/layout/page-container"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, AlertTriangle, Pencil, Trash2 } from "lucide-react"
@@ -150,12 +151,7 @@ export default function EstoquePage() {
 
   if (loading) {
     return (
-      <div
-        role="status"
-        aria-busy="true"
-        aria-live="polite"
-        className="p-4 md:p-6 lg:p-8 space-y-6"
-      >
+      <PageContainer role="status" aria-busy="true" aria-live="polite" className="space-y-6">
         <span className="sr-only">Carregando o estoque…</span>
 
         {/* Header */}
@@ -172,7 +168,7 @@ export default function EstoquePage() {
 
         {/* Table */}
         <TableSkeleton columns={8} rows={6} />
-      </div>
+      </PageContainer>
     )
   }
 
@@ -180,7 +176,7 @@ export default function EstoquePage() {
   // ErrorState, nunca a tabela vazia.
   if (error) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <PageContainer>
         <ErrorState
           title="Não foi possível carregar o estoque."
           message="Houve um problema ao carregar seus lotes. Tente novamente."
@@ -189,12 +185,12 @@ export default function EstoquePage() {
             void fetchLots()
           }}
         />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <PageContainer className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -330,6 +326,6 @@ export default function EstoquePage() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }
