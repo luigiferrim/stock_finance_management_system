@@ -19,6 +19,7 @@ import {
 import { Package, AlertTriangle, TrendingUp, DollarSign, Layers } from "lucide-react"
 import { NewLotModal } from "@/components/new-lot-modal"
 import { RoleGate } from "@/components/auth/role-gate"
+import { ErrorState } from "@/components/ui/error-state"
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton"
 import { STOCK_DATA_CHANGED_EVENT, STOCK_DATA_CHANGED_STORAGE_KEY } from "@/lib/stock/client-events"
 
@@ -62,14 +63,17 @@ export default function DashboardPage() {
   const { data: session, status: sessionStatus } = useSession()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/dashboard/stats", { cache: "no-store" })
       if (!res.ok) throw new Error("Não foi possível carregar o dashboard.")
       setStats(await res.json())
+      setError(false)
     } catch (err) {
       console.error("Erro ao buscar dados:", err)
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -142,6 +146,20 @@ export default function DashboardPage() {
 
   if (loading) {
     return <DashboardSkeleton />
+  }
+
+  // Erro só substitui a tela quando ainda não há dados carregados. Se um refetch
+  // de background falhar, mantemos os dados já em tela em vez de derrubar tudo.
+  if (error && !stats) {
+    return (
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
+        <ErrorState
+          title="Não foi possível carregar o dashboard."
+          message="Houve um problema ao carregar seus dados. Tente novamente."
+          onRetry={fetchData}
+        />
+      </div>
+    )
   }
 
   return (

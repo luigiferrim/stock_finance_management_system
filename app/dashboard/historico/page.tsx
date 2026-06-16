@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { AlertTriangle } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { useIsMobile } from "@/lib/hooks/use-is-mobile"
@@ -60,31 +60,35 @@ function getActionMeta(action: string) {
 export default function HistoricoPage() {
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedAction, setSelectedAction] = useState("all")
   const isMobile = useIsMobile()
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const response = await fetch("/api/logs")
+  const fetchLogs = useCallback(async () => {
+    setLoading(true)
+    setError(false)
 
-        if (!response.ok) {
-          throw new Error("Não foi possível carregar o histórico.")
-        }
+    try {
+      const response = await fetch("/api/logs")
 
-        const data: Log[] = await response.json()
-        setLogs(data)
-      } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : "Erro ao carregar histórico.")
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error("Resposta não-ok ao carregar o histórico.")
       }
-    }
 
-    fetchLogs()
+      const data: Log[] = await response.json()
+      setLogs(data)
+    } catch (fetchError) {
+      console.error("Erro ao carregar histórico:", fetchError)
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    void fetchLogs()
+  }, [fetchLogs])
 
   const normalizedSearch = searchTerm.trim().toLowerCase()
   const filteredLogs = logs.filter((log) => {
@@ -166,15 +170,11 @@ export default function HistoricoPage() {
           <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
           <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
         </div>
-        <Card className="border-destructive/30">
-          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
-            <div>
-              <p className="font-semibold text-foreground">Não foi possível carregar o histórico</p>
-              <p className="text-sm text-muted-foreground">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <ErrorState
+          title="Não foi possível carregar o histórico."
+          message="Houve um problema ao carregar os registros. Tente novamente."
+          onRetry={fetchLogs}
+        />
       </div>
     )
   }

@@ -5,6 +5,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ErrorState } from "@/components/ui/error-state"
 import { ListSkeleton } from "@/components/skeletons/list-skeleton"
 import { ROLES, type Role, can, canAssignRole, canManageMember } from "@/lib/auth/permissions"
 import { useRole } from "@/lib/auth/use-permissions"
@@ -49,6 +50,7 @@ export function MembersSection() {
   const [members, setMembers] = useState<Member[]>([])
   const [invites, setInvites] = useState<PendingInvite[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [error, setError] = useState("")
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState<Role>("Viewer")
@@ -61,22 +63,28 @@ export function MembersSection() {
       const data = (await response.json()) as MembersResponse & { error?: string }
 
       if (!response.ok) {
-        setError(data.error ?? "Não foi possível carregar os membros.")
+        setLoadError(true)
         return
       }
 
       setCurrentUserId(data.currentUserId)
       setMembers(data.members)
       setInvites(data.invites)
+      setLoadError(false)
       setError("")
     } catch {
-      setError("Erro ao carregar os membros.")
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    void load()
+  }, [load])
+
+  const retryLoad = useCallback(() => {
+    setLoading(true)
     void load()
   }, [load])
 
@@ -96,6 +104,25 @@ export function MembersSection() {
             <span className="sr-only">Carregando os membros…</span>
             <ListSkeleton rows={3} />
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Membros</CardTitle>
+          <CardDescription>Gerencie os papéis e o acesso da sua organização.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ErrorState
+            variant="section"
+            title="Não foi possível carregar os membros."
+            message="Tente novamente."
+            onRetry={retryLoad}
+          />
         </CardContent>
       </Card>
     )

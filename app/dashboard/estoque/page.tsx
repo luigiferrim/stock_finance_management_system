@@ -19,6 +19,7 @@ import { useIsMobile } from "@/lib/hooks/use-is-mobile"
 import { notifyStockChanged } from "@/lib/stock/client-events"
 import { LOT_STATUS_GROUPS } from "@/lib/stock/constants"
 import { RoleGate } from "@/components/auth/role-gate"
+import { ErrorState } from "@/components/ui/error-state"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TableSkeleton } from "@/components/skeletons/table-skeleton"
 
@@ -42,7 +43,7 @@ export default function EstoquePage() {
   const [lots, setLots] = useState<Lot[]>([])
   const [filteredLots, setFilteredLots] = useState<Lot[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [error, setError] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [editingLot, setEditingLot] = useState<Lot | null>(null)
   const isMobile = useIsMobile()
@@ -62,7 +63,7 @@ export default function EstoquePage() {
 
   const fetchLots = async () => {
     try {
-      setError("")
+      setError(false)
       const response = await fetch("/api/lots", { cache: "no-store" })
       const data = await response.json()
 
@@ -76,11 +77,11 @@ export default function EstoquePage() {
 
       setLots(data)
       setFilteredLots(data)
-    } catch (error) {
-      console.error("Erro ao buscar lotes:", error)
+    } catch (fetchError) {
+      console.error("Erro ao buscar lotes:", fetchError)
       setLots([])
       setFilteredLots([])
-      setError(error instanceof Error ? error.message : "Erro ao buscar lotes")
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -175,6 +176,23 @@ export default function EstoquePage() {
     )
   }
 
+  // Erro e vazio são mutuamente exclusivos: em falha de carga mostramos só o
+  // ErrorState, nunca a tabela vazia.
+  if (error) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8">
+        <ErrorState
+          title="Não foi possível carregar o estoque."
+          message="Houve um problema ao carregar seus lotes. Tente novamente."
+          onRetry={() => {
+            setLoading(true)
+            void fetchLots()
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -201,12 +219,6 @@ export default function EstoquePage() {
           className="pl-10 bg-white"
         />
       </div>
-
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
 
       {/* Tabela */}
       <div className="bg-white rounded-lg border border-border overflow-x-auto">
