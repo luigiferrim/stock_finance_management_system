@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageContainer } from "@/components/layout/page-container"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ErrorState } from "@/components/ui/error-state"
@@ -107,9 +108,9 @@ export default function HistoricoPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <PageContainer className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+          <h1 className="text-3xl font-bold text-foreground">Histórico de Auditoria</h1>
           <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
         </div>
 
@@ -159,15 +160,15 @@ export default function HistoricoPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <PageContainer className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+          <h1 className="text-3xl font-bold text-foreground">Histórico de Auditoria</h1>
           <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
         </div>
         <ErrorState
@@ -175,14 +176,14 @@ export default function HistoricoPage() {
           message="Houve um problema ao carregar os registros. Tente novamente."
           onRetry={fetchLogs}
         />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <PageContainer className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Histórico de Auditoria</h1>
+        <h1 className="text-3xl font-bold text-foreground">Histórico de Auditoria</h1>
         <p className="text-muted-foreground">Registro completo de todas as ações no sistema</p>
       </div>
 
@@ -288,6 +289,6 @@ export default function HistoricoPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }
