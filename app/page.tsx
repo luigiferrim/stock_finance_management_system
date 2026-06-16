@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { StockfeeLogo } from "@/components/icons/stockfee-logo"
 
 const featureCards = [
   {
@@ -129,7 +130,7 @@ export default function HomePage() {
           <nav className="mx-auto flex min-h-16 w-full max-w-5xl items-center justify-between rounded-full border border-white/80 bg-white/70 px-4 shadow-sm backdrop-blur sm:px-6">
             <Link href="/" className="flex items-center gap-3" aria-label="Stockfee">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#332e2a] text-white">
-                <Coffee className="h-5 w-5" />
+                <StockfeeLogo className="h-5 w-5" />
               </span>
               <span className="text-xl font-semibold">Stockfee</span>
             </Link>
@@ -379,7 +380,7 @@ export default function HomePage() {
           <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-lg border border-[#ded9d1] bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#302b27] text-white">
-                <Coffee className="h-5 w-5" />
+                <StockfeeLogo className="h-5 w-5" />
               </span>
               <div>
                 <p className="font-semibold">Stockfee</p>
