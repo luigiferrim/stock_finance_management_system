@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageContainer } from "@/components/layout/page-container"
 import { ACTIVE_LOT_STATUSES, SOLD_LOT_STATUS } from "@/lib/stock/constants"
 import { PermissionDenied } from "@/components/auth/role-gate"
 import { usePermission } from "@/lib/auth/use-permissions"
@@ -104,20 +105,15 @@ export default function FinanceiroPage() {
 
   if (!canViewFinancials) {
     return (
-      <div className="p-6">
+      <PageContainer>
         <PermissionDenied message="Análise financeira disponível apenas para Owner, Admin e Finance." />
-      </div>
+      </PageContainer>
     )
   }
 
   if (loading) {
     return (
-      <div
-        role="status"
-        aria-busy="true"
-        aria-live="polite"
-        className="p-4 md:p-6 lg:p-8 space-y-6"
-      >
+      <PageContainer role="status" aria-busy="true" aria-live="polite" className="space-y-6">
         <span className="sr-only">Carregando a análise financeira…</span>
 
         {/* Header */}
@@ -176,26 +172,26 @@ export default function FinanceiroPage() {
           <Skeleton className="h-3 w-64 max-w-full" />
           <TableSkeleton columns={7} rows={5} />
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   if (error) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <PageContainer>
         <ErrorState
           title="Não foi possível carregar a análise financeira."
           message="Houve um problema ao carregar seus dados. Tente novamente."
           onRetry={loadLots}
         />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <PageContainer className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Análise Financeira</h1>
+        <h1 className="text-3xl font-bold text-foreground">Análise Financeira</h1>
         <p className="text-sm text-muted-foreground">
           Realizado é o que já entrou com lotes vendidos. Potencial é a projeção do estoque ativo.
         </p>
@@ -366,6 +362,6 @@ export default function FinanceiroPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

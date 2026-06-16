@@ -18,6 +18,7 @@ import {
 } from "recharts"
 import { Package, AlertTriangle, TrendingUp, DollarSign, Layers } from "lucide-react"
 import { NewLotModal } from "@/components/new-lot-modal"
+import { PageContainer } from "@/components/layout/page-container"
 import { RoleGate } from "@/components/auth/role-gate"
 import { ErrorState } from "@/components/ui/error-state"
 import { DashboardSkeleton } from "@/components/skeletons/dashboard-skeleton"
@@ -152,18 +153,18 @@ export default function DashboardPage() {
   // de background falhar, mantemos os dados já em tela em vez de derrubar tudo.
   if (error && !stats) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8">
+      <PageContainer>
         <ErrorState
           title="Não foi possível carregar o dashboard."
           message="Houve um problema ao carregar seus dados. Tente novamente."
           onRetry={fetchData}
         />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <PageContainer className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -421,7 +422,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </RoleGate>
-    </div>
+    </PageContainer>
   )
 }
 

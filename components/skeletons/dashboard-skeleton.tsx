@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { PageContainer } from "@/components/layout/page-container"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CardGridSkeleton } from "@/components/skeletons/card-grid-skeleton"
 
@@ -12,12 +13,7 @@ const CARD = "rounded-2xl border-0 shadow-sm bg-white"
  */
 function DashboardSkeleton() {
   return (
-    <div
-      role="status"
-      aria-busy="true"
-      aria-live="polite"
-      className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 space-y-8"
-    >
+    <PageContainer role="status" aria-busy="true" aria-live="polite" className="space-y-8">
       <span className="sr-only">Carregando o dashboard…</span>
 
       {/* Header */}
@@ -94,7 +90,7 @@ function DashboardSkeleton() {
           />
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }
 

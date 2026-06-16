@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageContainer } from "@/components/layout/page-container"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmailCard } from "@/components/settings/email-card"
@@ -152,10 +153,10 @@ export default function ConfiguracoesPage() {
   const isProfileUnchanged = profileName.trim() === currentSessionName
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <PageContainer className="space-y-6">
       <div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+          <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
           {role && (
             <span className="inline-flex items-center rounded-full bg-[#ece7df] px-2.5 py-0.5 text-xs font-medium text-[#795548]">
               Seu papel: {role}
@@ -165,7 +166,7 @@ export default function ConfiguracoesPage() {
         <p className="text-sm text-muted-foreground">Gerencie os dados da conta e a segurança do acesso.</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="max-w-3xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Meu Perfil</CardTitle>
@@ -264,6 +265,6 @@ export default function ConfiguracoesPage() {
 
         <RequestRoleCard />
       </div>
-    </div>
+    </PageContainer>
   )
 }
