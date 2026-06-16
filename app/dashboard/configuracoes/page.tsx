@@ -166,7 +166,7 @@ export default function ConfiguracoesPage() {
         <p className="text-sm text-muted-foreground">Gerencie os dados da conta e a segurança do acesso.</p>
       </div>
 
-      <div className="max-w-3xl space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Meu Perfil</CardTitle>
