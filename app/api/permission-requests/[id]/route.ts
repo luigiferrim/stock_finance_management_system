@@ -49,30 +49,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Esta solicitação já foi revisada." }, { status: 409 })
     }
 
-    const newStatus = action === "approve" ? "approved" : "rejected"
-    await updateRequestStatus(context.organization.id, requestId.value, newStatus, context.userId)
-
     if (action === "approve") {
       const membership = await findMembershipByUserId(
         context.organization.id,
         permRequest.requesterUserId,
       )
 
-      if (membership) {
-        await updateMemberRole(
-          context.organization.id,
-          membership.id,
-          permRequest.requestedRole,
+      if (!membership) {
+        return NextResponse.json(
+          { error: "O solicitante não é mais um membro ativo da organização." },
+          { status: 409 },
         )
       }
+
+      await updateMemberRole(context.organization.id, membership.id, permRequest.requestedRole)
+      await updateRequestStatus(context.organization.id, requestId.value, "approved", context.userId)
+
+      return NextResponse.json({
+        message: `Solicitação aprovada. O papel foi atualizado para ${permRequest.requestedRole}.`,
+      })
     }
 
-    const message =
-      action === "approve"
-        ? `Solicitação aprovada. O papel foi atualizado para ${permRequest.requestedRole}.`
-        : "Solicitação rejeitada."
+    await updateRequestStatus(context.organization.id, requestId.value, "rejected", context.userId)
 
-    return NextResponse.json({ message })
+    return NextResponse.json({ message: "Solicitação rejeitada." })
   } catch (error) {
     console.error("Erro ao revisar solicitação de permissão:", error)
     return NextResponse.json({ error: "Erro ao revisar solicitação" }, { status: 500 })
