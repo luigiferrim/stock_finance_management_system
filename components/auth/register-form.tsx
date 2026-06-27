@@ -144,6 +144,7 @@ function RegisterFormInner() {
               onChange={(event) => setName(event.target.value)}
               required
               disabled={loading}
+              maxLength={100}
               className="bg-white pl-10"
             />
           </div>
@@ -258,7 +259,7 @@ function RegisterFormInner() {
         </Button>
 
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Ja tem uma conta? </span>
+          <span className="text-muted-foreground">Já tem uma conta? </span>
           <Link
             href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
             className="font-medium text-primary underline underline-offset-4"

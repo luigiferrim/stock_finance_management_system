@@ -60,7 +60,7 @@ function LoginFormInner({ registered = false }: { registered?: boolean }) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {registered && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-            Conta criada com sucesso. Agora faca login.
+            Conta criada com sucesso. Agora faça login.
           </div>
         )}
 
