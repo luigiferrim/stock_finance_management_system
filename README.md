@@ -224,7 +224,7 @@ O script `007-manual-password-reset.sql` é apenas para reset manual de senha em
 ```
 stockfee/
 ├── app/                  # App Router do Next.js
-│   ├── api/              # Rotas de API (auth, dashboard, logs, lots, register, user, verify-access)
+│   ├── api/              # Rotas de API (auth, dashboard, invites, logs, lots, members, register, user)
 │   ├── configuracoes/    # Redirect para /dashboard/configuracoes
 │   ├── dashboard/        # Painel autenticado (estoque, financeiro, histórico, configurações)
 │   ├── estoque/          # Redirect para /dashboard/estoque
