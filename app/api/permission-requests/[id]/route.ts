@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 
 import { authOptions } from "@/lib/auth/options"
 import { requirePermission } from "@/lib/organizations/context"
+import { requireSameOrigin } from "@/lib/security/api"
 import {
   getRequestById,
   updateRequestStatus,
@@ -12,9 +13,15 @@ import { validatePositiveInteger } from "@/lib/security/validation"
 
 export const dynamic = "force-dynamic"
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)
+
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
+    }
+
     const context = await requirePermission(session, "org:view-settings")
     if (!context.ok) {
       return context.response

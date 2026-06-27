@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 
 import { authOptions } from "@/lib/auth/options"
 import { isKnownRole, ROLES } from "@/lib/auth/permissions"
 import { requireActiveOrganization, requirePermission } from "@/lib/organizations/context"
+import { requireSameOrigin } from "@/lib/security/api"
 import {
   createPermissionRequest,
   findPendingRequestForUser,
@@ -28,9 +29,15 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+
+    const originError = requireSameOrigin(request)
+    if (originError) {
+      return originError
+    }
+
     const context = await requireActiveOrganization(session)
     if (!context.ok) {
       return context.response
