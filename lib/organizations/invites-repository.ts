@@ -65,6 +65,27 @@ export async function findInviteByTokenHash(tokenHash: string) {
   }
 }
 
+export async function getInvitePreviewByTokenHash(tokenHash: string) {
+  const sql = getDb()
+  const rows = await sql`
+    SELECT invites.email, invites.role, invites.status, invites.expires_at,
+           organizations.name AS organization_name
+    FROM organization_invites AS invites
+    INNER JOIN organizations ON organizations.id = invites.organization_id
+    WHERE invites.token_hash = ${tokenHash}
+    LIMIT 1
+  `
+  const row = rows[0]
+  if (!row) return null
+  return {
+    email: row.email as string,
+    role: row.role as string,
+    organizationName: row.organization_name as string,
+    status: row.status as string,
+    expiresAt: new Date(row.expires_at),
+  }
+}
+
 export async function markInviteAccepted(inviteId: number) {
   const sql = getDb()
   await sql`

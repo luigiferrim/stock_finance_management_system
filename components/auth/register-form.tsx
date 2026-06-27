@@ -5,7 +5,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Building2, Eye, EyeOff, Lock, Mail, User } from "lucide-react"
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,44 @@ function RegisterFormInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [invite, setInvite] = useState<{ token: string; organizationName: string; role: string } | null>(null)
+
+  // Quando o cadastro é aberto a partir de um link de convite, o callbackUrl
+  // aponta para /convite/aceitar?token=... Reconhecemos esse token, buscamos os
+  // dados do convite e entramos em "modo convite": o e-mail é travado no
+  // endereço convidado e o usuário entra direto na organização que o convidou,
+  // sem precisar criar uma organização própria.
+  useEffect(() => {
+    if (!callbackUrl) return
+
+    let token = ""
+    try {
+      token = new URL(callbackUrl, window.location.origin).searchParams.get("token") ?? ""
+    } catch {
+      token = ""
+    }
+
+    if (token.length < 10) return
+
+    let active = true
+    void (async () => {
+      try {
+        const response = await fetch(`/api/invites/preview?token=${encodeURIComponent(token)}`)
+        if (!active) return
+        if (!response.ok) return
+        const data = (await response.json()) as { email?: string; role?: string; organizationName?: string }
+        if (!active || !data.email) return
+        setEmail(data.email)
+        setInvite({ token, organizationName: data.organizationName ?? "", role: data.role ?? "" })
+      } catch {
+        // Convite indisponível: segue como cadastro comum (cria nova organização).
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [callbackUrl])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -38,7 +76,7 @@ function RegisterFormInner() {
       return
     }
 
-    if (organizationName.trim().length < 2) {
+    if (!invite && organizationName.trim().length < 2) {
       setError("Informe o nome da organização")
       return
     }
@@ -49,7 +87,11 @@ function RegisterFormInner() {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, organizationName, email, password }),
+        body: JSON.stringify(
+          invite
+            ? { name, email, password, inviteToken: invite.token }
+            : { name, organizationName, email, password },
+        ),
       })
 
       const data = await response.json()
@@ -60,9 +102,12 @@ function RegisterFormInner() {
         return
       }
 
-      const loginUrl = callbackUrl
-        ? `/login?registered=true&callbackUrl=${encodeURIComponent(callbackUrl)}`
-        : "/login?registered=true"
+      // No fluxo de convite a conta já entra na organização ao ser criada, então
+      // o usuário só precisa fazer login (sem reabrir a página de aceitar).
+      const loginUrl =
+        callbackUrl && !invite
+          ? `/login?registered=true&callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "/login?registered=true"
       router.push(loginUrl)
     } catch {
       setError("Erro ao registrar. Tente novamente.")
@@ -73,6 +118,20 @@ function RegisterFormInner() {
   return (
     <AuthShell title="Crie sua conta" description="Comece a organizar os lotes da sua torrefaria no Stockfee.">
       <form onSubmit={handleSubmit} className="space-y-5">
+        {invite && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-foreground">
+            Você foi convidado para{" "}
+            <span className="font-medium">{invite.organizationName || "uma organização"}</span>
+            {invite.role ? (
+              <>
+                {" "}
+                como <span className="font-medium">{invite.role}</span>
+              </>
+            ) : null}
+            . Crie sua conta com o e-mail convidado para entrar automaticamente.
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="name">Nome completo</Label>
           <div className="relative">
@@ -90,23 +149,25 @@ function RegisterFormInner() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="organization-name">Organização</Label>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="organization-name"
-              type="text"
-              placeholder="Nome da torrefação ou empresa"
-              value={organizationName}
-              onChange={(event) => setOrganizationName(event.target.value)}
-              required
-              disabled={loading}
-              maxLength={100}
-              className="bg-white pl-10"
-            />
+        {!invite && (
+          <div className="space-y-2">
+            <Label htmlFor="organization-name">Organização</Label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="organization-name"
+                type="text"
+                placeholder="Nome da torrefação ou empresa"
+                value={organizationName}
+                onChange={(event) => setOrganizationName(event.target.value)}
+                required
+                disabled={loading}
+                maxLength={100}
+                className="bg-white pl-10"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
@@ -120,9 +181,13 @@ function RegisterFormInner() {
               onChange={(event) => setEmail(event.target.value)}
               required
               disabled={loading}
+              readOnly={Boolean(invite)}
               className="bg-white pl-10"
             />
           </div>
+          {invite && (
+            <p className="text-xs text-muted-foreground">E-mail definido pelo convite.</p>
+          )}
         </div>
 
         <div className="space-y-2">
