@@ -46,6 +46,7 @@ export default function EstoquePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [actionError, setActionError] = useState("")
   const [editingLot, setEditingLot] = useState<Lot | null>(null)
   const isMobile = useIsMobile()
 
@@ -92,6 +93,7 @@ export default function EstoquePage() {
     if (!confirm("Tem certeza que deseja deletar este lote?")) return
 
     try {
+      setActionError("")
       const response = await fetch(`/api/lots/${id}/delete`, { method: "POST" })
 
       if (!response.ok) throw new Error("Erro ao deletar lote")
@@ -100,7 +102,7 @@ export default function EstoquePage() {
       fetchLots()
     } catch (error) {
       console.error("Erro ao deletar lote:", error)
-      alert("Erro ao deletar lote")
+      setActionError("Não foi possível deletar o lote. Tente novamente.")
     }
   }
 
@@ -130,11 +132,12 @@ export default function EstoquePage() {
 
       if (!response.ok) throw new Error("Erro ao atualizar status")
 
+      setActionError("")
       notifyStockChanged()
       fetchLots()
     } catch (error) {
       console.error("Erro ao atualizar status:", error)
-      alert("Erro ao atualizar status")
+      setActionError("Não foi possível atualizar o status. Tente novamente.")
     }
   }
 
@@ -204,6 +207,12 @@ export default function EstoquePage() {
           <NewLotModal onSuccess={handleSuccess} editLot={editingLot} />
         </RoleGate>
       </div>
+
+      {actionError && (
+        <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative max-w-md">

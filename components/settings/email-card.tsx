@@ -14,19 +14,32 @@ export function EmailCard() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [confirmUrl, setConfirmUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
-    const res = await fetch("/api/user/change-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ newEmail, currentPassword }),
-    })
-    const data = await res.json()
-    if (!res.ok) { setError(data.error ?? "Erro ao solicitar troca."); return }
-    setConfirmUrl(data.confirmUrl)
-    setCurrentPassword("")
+    setConfirmUrl(null)
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/user/change-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newEmail, currentPassword }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao solicitar troca.")
+        return
+      }
+      setConfirmUrl(data.confirmUrl)
+      setNewEmail("")
+      setCurrentPassword("")
+    } catch {
+      setError("Erro de conexão. Tente novamente.")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -46,7 +59,9 @@ export function EmailCard() {
             <Input id="currentPassword" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit">Solicitar troca de e-mail</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Solicitando..." : "Solicitar troca de e-mail"}
+          </Button>
         </form>
         {confirmUrl && (
           <div className="mt-4 space-y-2">
