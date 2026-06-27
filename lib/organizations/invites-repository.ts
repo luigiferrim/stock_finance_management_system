@@ -100,6 +100,31 @@ export async function markInviteExpired(inviteId: number) {
   await sql`UPDATE organization_invites SET status = 'expired', updated_at = NOW() WHERE id = ${inviteId}`
 }
 
+export async function rotateInviteToken(params: {
+  organizationId: number
+  inviteId: number
+  tokenHash: string
+  expiresAt: Date
+}) {
+  const sql = getDb()
+  const rows = await sql`
+    UPDATE organization_invites
+    SET token_hash = ${params.tokenHash}, expires_at = ${params.expiresAt}, updated_at = NOW()
+    WHERE id = ${params.inviteId}
+      AND organization_id = ${params.organizationId}
+      AND status = 'pending'
+    RETURNING id, email, role, expires_at
+  `
+  const row = rows[0]
+  if (!row) return null
+  return {
+    id: Number(row.id),
+    email: row.email as string,
+    role: row.role as string,
+    expiresAt: new Date(row.expires_at),
+  }
+}
+
 export async function revokeInvite(organizationId: number, inviteId: number) {
   const sql = getDb()
   await sql`

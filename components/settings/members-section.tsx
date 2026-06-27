@@ -56,6 +56,7 @@ export function MembersSection() {
   const [inviteRole, setInviteRole] = useState<Role>("Viewer")
   const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [acceptUrl, setAcceptUrl] = useState("")
+  const [linkByInvite, setLinkByInvite] = useState<Record<number, string>>({})
 
   const load = useCallback(async () => {
     try {
@@ -198,6 +199,23 @@ export function MembersSection() {
     }
   }
 
+  async function handleRegenerateInvite(inviteId: number) {
+    try {
+      const response = await fetch(`/api/invites/${inviteId}`, { method: "POST" })
+      const data = (await response.json()) as { error?: string; acceptUrl?: string }
+
+      if (!response.ok || !data.acceptUrl) {
+        setError(data.error ?? "Não foi possível gerar o link.")
+        return
+      }
+
+      setError("")
+      setLinkByInvite((current) => ({ ...current, [inviteId]: data.acceptUrl as string }))
+    } catch {
+      setError("Erro ao gerar o link do convite.")
+    }
+  }
+
   async function handleRevokeInvite(inviteId: number) {
     try {
       const response = await fetch(`/api/invites/${inviteId}`, { method: "DELETE" })
@@ -337,22 +355,51 @@ export function MembersSection() {
               {invites.map((invite) => (
                 <div
                   key={invite.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[#e6e0d9] px-4 py-3"
+                  className="space-y-2 rounded-md border border-[#e6e0d9] px-4 py-3"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[#2b221c]">{invite.email}</p>
-                    <p className="truncate text-xs text-[#6e5a4b]">
-                      <span className={badgeClass}>{invite.role}</span>
-                      <span className="ml-2">expira em {formatDate(invite.expiresAt)}</span>
-                    </p>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[#2b221c]">{invite.email}</p>
+                      <p className="truncate text-xs text-[#6e5a4b]">
+                        <span className={badgeClass}>{invite.role}</span>
+                        <span className="ml-2">expira em {formatDate(invite.expiresAt)}</span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRegenerateInvite(invite.id)}
+                      >
+                        Gerar link
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRevokeInvite(invite.id)}
+                      >
+                        Revogar
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRevokeInvite(invite.id)}
-                  >
-                    Revogar
-                  </Button>
+                  {linkByInvite[invite.id] ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        readOnly
+                        value={linkByInvite[invite.id]}
+                        className="flex-1"
+                        style={{ minWidth: "12rem" }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigator.clipboard.writeText(linkByInvite[invite.id])}
+                      >
+                        Copiar
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>
