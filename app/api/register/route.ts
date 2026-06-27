@@ -86,9 +86,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 })
     }
 
-    // Fluxo de convite: o usuário foi convidado para uma organização existente.
-    // Em vez de criar uma organização própria, associamos a conta diretamente à
-    // organização do convite, com o papel definido por quem convidou.
     if (inviteToken) {
       return await registerInvitedUser({
         inviteToken,

@@ -25,11 +25,8 @@ function RegisterFormInner() {
   const [loading, setLoading] = useState(false)
   const [invite, setInvite] = useState<{ token: string; organizationName: string; role: string } | null>(null)
 
-  // Quando o cadastro é aberto a partir de um link de convite, o callbackUrl
-  // aponta para /convite/aceitar?token=... Reconhecemos esse token, buscamos os
-  // dados do convite e entramos em "modo convite": o e-mail é travado no
-  // endereço convidado e o usuário entra direto na organização que o convidou,
-  // sem precisar criar uma organização própria.
+  // Em "modo convite" (callbackUrl com token) o e-mail é travado no endereço
+  // convidado e o usuário entra direto na organização, sem criar uma própria.
   useEffect(() => {
     if (!callbackUrl) return
 

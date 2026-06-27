@@ -6,7 +6,6 @@ import { requirePermission } from "@/lib/organizations/context"
 import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validateCreateLotPayload } from "@/lib/stock/validation"
 
-// GET /api/lots - Listar todos os lotes
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -50,7 +49,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/lots - Criar novo lote
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -7,7 +7,6 @@ import { parseJsonBody, requireSameOrigin } from "@/lib/security/api"
 import { validatePositiveInteger } from "@/lib/security/validation"
 import { validateUpdateLotPayload } from "@/lib/stock/validation"
 
-// PUT /api/lots/[id] - Atualizar lote
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions)

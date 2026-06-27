@@ -9,10 +9,7 @@ import { getInvitePreviewByTokenHash } from "@/lib/organizations/invites-reposit
 
 export const dynamic = "force-dynamic"
 
-// GET /api/invites/preview?token=... — dados públicos (gated pelo token) de um
-// convite pendente, usados pela tela de cadastro para mostrar a organização e
-// travar o e-mail no endereço convidado. Não exige sessão: o token só chega a
-// quem recebeu o convite.
+// Não exige sessão: o token só chega a quem recebeu o convite por e-mail.
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token") ?? ""
 
